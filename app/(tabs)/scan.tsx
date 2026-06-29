@@ -1,23 +1,26 @@
 import React, { useState, useRef } from "react";
-import { StyleSheet, Text, TouchableOpacity, View, Image, ActivityIndicator } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View, Image, ActivityIndicator, Alert } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { supabase } from "../../utils/supabase";
+import { useAuth } from "../../context/AuthContext";
 
 type ScanStep = "front" | "back" | "review";
 
 export default function ScanScreen() {
+  const { user } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const [step, setStep] = useState<ScanStep>("front");
   const [frontImage, setFrontImage] = useState<string | null>(null);
   const [backImage, setBackImage] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [identifying, setIdentifying] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const router = useRouter();
 
   if (!permission) {
-    // Camera permissions are still loading
     return (
       <View className="flex-1 bg-background justify-center items-center">
         <ActivityIndicator size="large" color="#3b82f6" />
@@ -26,7 +29,6 @@ export default function ScanScreen() {
   }
 
   if (!permission.granted) {
-    // Camera permissions are not granted yet
     return (
       <View className="flex-1 bg-background justify-center items-center px-6">
         <View className="w-16 h-16 bg-primary/10 rounded-full justify-center items-center mb-4 border border-primary/20">
@@ -46,11 +48,10 @@ export default function ScanScreen() {
     );
   }
 
-  // Preprocess image: crop & compress to JPEG format at 0.7 quality
   async function preprocessImage(uri: string): Promise<string> {
     const result = await ImageManipulator.manipulateAsync(
       uri,
-      [{ resize: { width: 1200 } }], // Compress width to 1200px (preserves aspect ratio)
+      [{ resize: { width: 1200 } }],
       { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
     );
     return result.uri;
@@ -77,6 +78,7 @@ export default function ScanScreen() {
         }
       } catch (err) {
         console.error("Capture Error:", err);
+        Alert.alert("Capture Error", "Failed to take photo. Please try again.");
       } finally {
         setProcessing(false);
       }
@@ -87,14 +89,88 @@ export default function ScanScreen() {
     setFrontImage(null);
     setBackImage(null);
     setStep("front");
+    setIdentifying(false);
   }
 
-  function startIdentification() {
-    // Navigates to the details confirmation flow, passing both card images
-    router.push({
-      pathname: "/(tabs)/index", // Placeholders, will connect in Sprint 5
-      params: { frontImage, backImage },
-    });
+  // Upload file helper utilizing React Native FormData format
+  async function uploadImageToStorage(uri: string, isFront: boolean): Promise<string> {
+    if (!user) throw new Error("User must be authenticated to upload assets.");
+    
+    const fileExtension = "jpg";
+    const filename = `${user.id}/${Date.now()}_${isFront ? "front" : "back"}.${fileExtension}`;
+    
+    const formData = new FormData();
+    formData.append("file", {
+      uri,
+      name: isFront ? "front.jpg" : "back.jpg",
+      type: "image/jpeg",
+    } as any);
+
+    const { data, error } = await supabase.storage
+      .from("card-images")
+      .upload(filename, formData, {
+        contentType: "image/jpeg",
+        upsert: true,
+      });
+
+    if (error) {
+      throw error;
+    }
+    return data.path;
+  }
+
+  async function startIdentification() {
+    if (!frontImage || !backImage) return;
+    if (!user) {
+      Alert.alert("Authentication Required", "Please log in to scan cards.");
+      return;
+    }
+
+    setIdentifying(true);
+
+    try {
+      // 1. Upload both front and back images to Supabase Storage
+      const [frontPath, backPath] = await Promise.all([
+        uploadImageToStorage(frontImage, true),
+        uploadImageToStorage(backImage, false),
+      ]);
+
+      // 2. Call the serverless Edge Function to identify the card details
+      const { data: edgeResponse, error: edgeError } = await supabase.functions.invoke("identify-card", {
+        body: { frontPath, backPath },
+      });
+
+      if (edgeError || !edgeResponse?.success) {
+        throw new Error(edgeError?.message || edgeResponse?.error || "AI could not identify the card.");
+      }
+
+      // 3. Navigate user to confirmation screen, passing image paths and parsed metadata
+      router.push({
+        pathname: "/card/confirm",
+        params: {
+          frontPath,
+          backPath,
+          aiResult: JSON.stringify(edgeResponse.data),
+        },
+      });
+    } catch (err: any) {
+      console.error("Scanning process failed:", err);
+      Alert.alert("Identification Failed", err.message || "Failed to identify card. Try again under better lighting.");
+      setIdentifying(false);
+    }
+  }
+
+  // Analyzing Page Loading View
+  if (identifying) {
+    return (
+      <View className="flex-1 bg-background justify-center items-center px-6">
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text className="text-white text-xl font-bold mt-6 text-center animate-pulse">Analyzing Card...</Text>
+        <Text className="text-foreground-muted text-sm text-center mt-2 max-w-xs">
+          Our AI is reading logos, card numbers, player stats, and detecting rookie status. This takes 4-6 seconds.
+        </Text>
+      </View>
+    );
   }
 
   if (step === "review") {
@@ -107,7 +183,6 @@ export default function ScanScreen() {
           </Text>
 
           <View className="flex-row justify-between mb-6">
-            {/* Front Image Card */}
             <View className="w-[48%] aspect-[3/4] bg-background-card border border-border rounded-2xl overflow-hidden relative shadow-md">
               {frontImage && (
                 <Image source={{ uri: frontImage }} className="w-full h-full" resizeMode="cover" />
@@ -117,7 +192,6 @@ export default function ScanScreen() {
               </View>
             </View>
 
-            {/* Back Image Card */}
             <View className="w-[48%] aspect-[3/4] bg-background-card border border-border rounded-2xl overflow-hidden relative shadow-md">
               {backImage && (
                 <Image source={{ uri: backImage }} className="w-full h-full" resizeMode="cover" />
@@ -153,7 +227,6 @@ export default function ScanScreen() {
   return (
     <View className="flex-1 bg-black">
       <CameraView style={StyleSheet.absoluteFillObject} ref={cameraRef}>
-        {/* Transparent layout overlay */}
         <View className="flex-1 justify-between bg-black/40 py-16 px-6">
           <View className="items-center">
             <Text className="text-2xl font-black text-white text-center tracking-wide">
@@ -166,26 +239,22 @@ export default function ScanScreen() {
             </Text>
           </View>
 
-          {/* Card Bounding Frame Overlay */}
           <View className="w-full aspect-[3/4] self-center items-center justify-center">
             <View
               style={{
                 width: "85%",
                 height: "85%",
                 borderWidth: 3,
-                borderColor: isFront ? "#3b82f6" : "#eab308", // Blue for Front, Gold for Back
+                borderColor: isFront ? "#3b82f6" : "#eab308",
                 borderRadius: 24,
                 borderStyle: "dashed",
               }}
             />
           </View>
 
-          {/* Controls Footer */}
           <View className="flex-row justify-between items-center px-8">
-            {/* Left Spacer to balance row */}
             <View className="w-12 h-12" />
 
-            {/* Shutter Button */}
             <TouchableOpacity
               onPress={takePicture}
               disabled={processing}
@@ -201,7 +270,6 @@ export default function ScanScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Cancel/Reset Button */}
             {(frontImage || step !== "front") ? (
               <TouchableOpacity
                 onPress={resetScanner}
