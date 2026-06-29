@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import { useAuth } from "../../context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Card {
   id: string;
@@ -37,10 +38,25 @@ export default function InventoryScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  // Fetch cards from Supabase
+  // Load cards from local device cache (AsyncStorage)
+  const loadCachedCards = async () => {
+    if (!user) return;
+    try {
+      const cached = await AsyncStorage.getItem(`cached_cards_${user.id}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setCards(parsed);
+        applyFiltersAndSearch(parsed, selectedCategory, searchQuery);
+      }
+    } catch (err) {
+      console.warn("Failed to load cached cards:", err);
+    }
+  };
+
+  // Fetch cards from remote Supabase DB
   const fetchCards = async (showLoader = true) => {
     if (!user) return;
-    if (showLoader) setLoading(true);
+    if (showLoader && cards.length === 0) setLoading(true);
 
     try {
       let query = supabase
@@ -55,28 +71,33 @@ export default function InventoryScreen() {
         throw error;
       }
 
-      setCards(data || []);
-      applyFiltersAndSearch(data || [], selectedCategory, searchQuery);
+      const fetchedCards = data || [];
+      setCards(fetchedCards);
+      applyFiltersAndSearch(fetchedCards, selectedCategory, searchQuery);
+
+      // Save fresh data to local cache
+      await AsyncStorage.setItem(`cached_cards_${user.id}`, JSON.stringify(fetchedCards));
     } catch (err) {
-      console.error("Error fetching cards:", err);
+      console.error("Error fetching cards from network:", err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  // Re-fetch every time this tab screen comes into focus
+  // Trigger cache load and network refresh on focus
   useFocusEffect(
     useCallback(() => {
-      fetchCards(cards.length === 0); // Only show loading spinner on initial load
+      loadCachedCards().then(() => {
+        fetchCards(false);
+      });
     }, [user])
   );
 
-  // Apply filters and searches locally for instantaneous feedback
+  // Apply search/pill filters locally
   const applyFiltersAndSearch = (allCards: Card[], category: string, search: string) => {
     let result = [...allCards];
 
-    // 1. Apply category filter
     if (category !== "all") {
       if (category === "rookies") {
         result = result.filter((c) => c.is_rookie);
@@ -87,7 +108,6 @@ export default function InventoryScreen() {
       }
     }
 
-    // 2. Apply search query
     if (search.trim()) {
       const query = search.toLowerCase();
       result = result.filter(
@@ -124,14 +144,12 @@ export default function InventoryScreen() {
       <View className="aspect-[3/4] w-full bg-slate-900 relative">
         <Image source={{ uri: item.front_image_url }} className="w-full h-full" resizeMode="cover" />
         
-        {/* Rookie Badge Overlay */}
         {item.is_rookie && (
           <View className="absolute top-2 left-2 bg-rookie px-2 py-0.5 rounded-md border border-yellow-400/20 shadow">
             <Text className="text-black text-[9px] font-black">RC</Text>
           </View>
         )}
 
-        {/* Sport Badge Overlay */}
         <View className="absolute bottom-2 right-2 bg-black/60 px-2 py-0.5 rounded-md">
           <Text className="text-white text-[9px] font-semibold">{item.sport}</Text>
         </View>
@@ -149,7 +167,6 @@ export default function InventoryScreen() {
 
   return (
     <View className="flex-1 bg-background pt-16">
-      {/* Header */}
       <View className="px-6 mb-4">
         <Text className="text-3xl font-extrabold text-white">
           Inventory<Text className="text-primary">.</Text>
@@ -159,7 +176,6 @@ export default function InventoryScreen() {
         </Text>
       </View>
 
-      {/* Search Input */}
       <View className="px-6 mb-4">
         <View className="bg-background-card border border-border rounded-xl px-4 py-3 flex-row items-center">
           <Ionicons name="search" size={20} color="#64748b" style={{ marginRight: 8 }} />
@@ -174,7 +190,6 @@ export default function InventoryScreen() {
         </View>
       </View>
 
-      {/* Horizontal Category Scroller */}
       <View className="mb-6">
         <ScrollView
           horizontal
@@ -200,7 +215,6 @@ export default function InventoryScreen() {
         </ScrollView>
       </View>
 
-      {/* Collection Grid List */}
       {loading ? (
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#3b82f6" />
