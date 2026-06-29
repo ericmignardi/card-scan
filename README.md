@@ -1,50 +1,106 @@
-# Welcome to your Expo app 👋
+# Sports Card Scanner Mobile App 🃏
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An AI-powered React Native/Expo application that scans both the front and back of sports cards (Baseball, Basketball, Football, Soccer, Hockey), identifies them using the Gemini 1.5 Flash API via Supabase Edge Functions, and stores them in a personal cloud inventory database.
 
-## Get started
+---
 
-1. Install dependencies
+## 📑 Core Reference Documents
+Before writing any code, familiarize yourself with our project blueprints:
+1.  **[Product Requirements Document (PRD.md)](file:///c:/Users/migna/OneDrive/Desktop/card-scan/PRD.md)**: Defines the app's features, functional scope, database entities/schemas, and system architecture.
+2.  **[Sprint Implementation Plan (PLAN.md)](file:///c:/Users/migna/OneDrive/Desktop/card-scan/PLAN.md)**: Your step-by-step developer roadmap. Organized into 7 agile sprints with learning guidelines and detailed tasks.
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## 📂 Project Directory Structure
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```text
+card-scan/
+├── app/                     # Expo Router (file-based navigation)
+│   ├── (tabs)/              # Main screens: Inventory (index), Scanner (scan), Profile (profile)
+│   ├── (auth)/              # Authentication screens (login, signup)
+│   ├── card/                # Stack screens: Card Details ([id].tsx)
+│   ├── _layout.tsx          # Root navigation config & NativeWind styling import
+│   └── index.tsx            # Initial routing gatekeeper
+├── assets/                  # Images, fonts, and application logos
+├── components/              # Shared UI components (inputs, card items, buttons, camera overlay)
+├── context/                 # State management providers (e.g. AuthContext)
+├── supabase/                # Supabase configurations and serverless code
+│   ├── migrations/          # SQL database schemas & Row-Level Security (RLS) scripts
+│   └── functions/           # Deno Serverless Edge Functions (e.g. identify-card)
+├── utils/                   # Shared utility logic (e.g. supabaseClient.ts)
+├── tailwind.config.js       # NativeWind styling theme configurations
+├── package.json             # Frontend node dependencies
+└── README.md                # This document!
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## ⚙️ Prerequisites
 
-To learn more about developing your project with Expo, look at the following resources:
+To run this application locally, you will need to install and configure the following:
+1.  **Node.js** (v18 or higher recommended)
+2.  **Docker Desktop** (Required to run the local Supabase emulator)
+3.  **Supabase CLI** (For database migrations, local storage setup, and edge functions testing)
+    *   *Windows installation via Scoop*: `scoop bucket add supabase https://github.com/supabase/scoop-bucket.git && scoop install supabase`
+    *   *Windows installation via NPM*: `npm install -g supabase`
+4.  **Expo Go** app installed on your physical mobile device (iOS/Android) or an emulator (Android Studio / Xcode).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
+## 🚀 Getting Started
 
-Join our community of developers creating universal apps.
+Follow these steps to set up the frontend and backend locally:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### 1. Backend Setup (Supabase)
+Ensure your Docker Desktop is running before executing backend commands:
+
+```bash
+# Initialize local Supabase configurations
+supabase init
+
+# Start local Supabase services (downloads Docker containers and seeds database)
+supabase start
+```
+
+Once started, the CLI will output your local API keys and URL configurations:
+*   **Studio URL**: `http://localhost:54321` (database management GUI)
+*   **API URL**: `http://localhost:54321`
+*   **Anon Key**: (used in client-side config)
+
+Create your Edge Function credentials:
+```bash
+# Set your Gemini API Key in the local Supabase environment secrets
+supabase secrets set GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+### 2. Frontend Configuration
+1.  Create a `.env.local` file in the root directory.
+2.  Populate it with the local Supabase credentials outputted by `supabase start`:
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=http://localhost:54321
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_local_anon_key_here
+```
+
+### 3. Running the App
+Install dependencies and launch the Expo development packager:
+
+```bash
+# Install NPM dependencies
+npm install
+
+# Start the Expo Metro bundler
+npx expo start
+```
+
+*   **iOS Simulator**: Press `i` to open in Xcode simulator.
+*   **Android Emulator**: Press `a` to open in Android Studio.
+*   **Physical Device**: Scan the QR code shown in the terminal using your phone's camera (iOS) or the Expo Go App (Android). Make sure your mobile device is on the same local Wi-Fi network as your computer!
+
+---
+
+## 🤝 Project Roles & Agile Iterations
+*   **Your Role**: Developer / Engineer. You will be writing 100% of the code, learning how to configure navigation, interface with phone cameras, manipulate image compression, upload assets to cloud storage, spin up serverless functions, write SQL queries, and prompt generative models.
+*   **My Role (Antigravity)**: Senior Developer / Project Manager. I will guide you, check your work, review code blocks, explain errors, write plans, and ensure that your database structures are safe, performant, and secure.
+
+Refer to **[PLAN.md](file:///c:/Users/migna/OneDrive/Desktop/card-scan/PLAN.md)** to begin Sprint 1!
