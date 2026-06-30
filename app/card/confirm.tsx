@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View, ScrollView, Image, ActivityIndicator, Switch } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { supabase } from "../../utils/supabase";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../../context/AuthContext";
+import { supabase } from "@/utils/supabase";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useAuth } from "@/context/AuthContext";
 
 export default function ConfirmCardScreen() {
   const { user } = useAuth();

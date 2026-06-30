@@ -1,14 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { AuthContextType } from "@/types/auth";
 import { Session, User } from "@supabase/supabase-js";
-import { supabase } from "../utils/supabase";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "@/utils/supabase";
 
-type AuthContextType = {
-  session: Session | null;
-  user: User | null;
-  isLoading: boolean;
-};
-
-const AuthContext = createContext<AuthContextType>({
+export const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
   isLoading: true,
@@ -28,7 +23,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     // 2. Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);

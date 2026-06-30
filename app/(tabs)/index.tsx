@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from "react";
 import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View, Image, ScrollView } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { supabase } from "../../utils/supabase";
-import { useAuth } from "../../context/AuthContext";
-import { Ionicons } from "@expo/vector-icons";
+import { supabase } from "@/utils/supabase";
+import { useAuth } from "@/context/AuthContext";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Card {
@@ -233,8 +233,6 @@ export default function InventoryScreen() {
       ) : (
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 24 }}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
         >
           <View className="items-center pb-24">
             <Ionicons name="albums-outline" size={64} color="#334155" />

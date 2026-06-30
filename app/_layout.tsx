@@ -1,10 +1,14 @@
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import "@/global.css";
+import { Stack, useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
-import { Slot, useRouter, useSegments } from "expo-router";
-import { AuthProvider, useAuth } from "../context/AuthContext";
-import "../global.css";
 
-function InitialLayout() {
+SplashScreen.preventAutoHideAsync();
+
+function AuthGate() {
   const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
@@ -12,14 +16,13 @@ function InitialLayout() {
   useEffect(() => {
     if (isLoading) return;
 
-    // Check if the user is currently in the (auth) route group
+    SplashScreen.hideAsync();
+
     const inAuthGroup = segments[0] === "(auth)";
 
     if (!user && !inAuthGroup) {
-      // Redirect unauthenticated users to the login screen
       router.replace("/(auth)/login");
     } else if (user && inAuthGroup) {
-      // Redirect authenticated users out of the auth group back to the home tabs
       router.replace("/(tabs)");
     }
   }, [user, isLoading, segments]);
@@ -32,13 +35,28 @@ function InitialLayout() {
     );
   }
 
-  return <Slot />;
+  return (
+    <>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="card"
+          options={{
+            presentation: "modal",
+          }}
+        />
+        <Stack.Screen name="index" />
+      </Stack>
+    </>
+  );
 }
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <InitialLayout />
+      <AuthGate />
     </AuthProvider>
   );
 }

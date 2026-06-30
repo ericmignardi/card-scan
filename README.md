@@ -38,12 +38,12 @@ card-scan/
 ## ⚙️ Prerequisites
 
 To run this application locally, you will need to install and configure the following:
-1.  **Node.js** (v18 or higher recommended)
+1.  **Node.js** (v20 or higher recommended)
 2.  **Docker Desktop** (Required to run the local Supabase emulator)
 3.  **Supabase CLI** (For database migrations, local storage setup, and edge functions testing)
     *   *Windows installation via Scoop*: `scoop bucket add supabase https://github.com/supabase/scoop-bucket.git && scoop install supabase`
     *   *Windows installation via NPM*: `npm install -g supabase`
-4.  **Expo Go** app installed on your physical mobile device (iOS/Android) or an emulator (Android Studio / Xcode).
+4.  **Expo Go** app (latest version from App Store / Play Store) or an emulator (Android Studio / Xcode). Note: Expo Go only supports the latest SDK — if your Expo Go version doesn't match, use a [Development Build](https://docs.expo.dev/develop/development-builds/introduction/) instead.
 
 ---
 
@@ -89,8 +89,8 @@ Install dependencies and launch the Expo development packager:
 # Install NPM dependencies
 npm install
 
-# Start the Expo Metro bundler
-npx expo start
+# Start the Expo Metro bundler (clear cache on first run)
+npx expo start -c
 ```
 
 *   **iOS Simulator**: Press `i` to open in Xcode simulator.

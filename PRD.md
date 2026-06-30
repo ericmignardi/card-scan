@@ -23,7 +23,7 @@ The **Sports Card Scanner** is a React Native/Expo mobile application designed f
 ---
 
 ## 3. Tech Stack
-*   **Frontend**: React Native, Expo (SDK 54.0.0), Expo Router (file-based navigation), Expo Camera, Expo Image Picker.
+*   **Frontend**: React Native, Expo (SDK 56), Expo Router (file-based navigation), Expo Camera, Expo Image Manipulator.
 *   **Styling**: NativeWind (Tailwind CSS for React Native).
 *   **Backend (BaaS)**: Supabase.
     *   **Authentication**: Supabase Auth (Email/Password credentials).

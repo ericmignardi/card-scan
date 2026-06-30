@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from "react-native";
-import { useAuth } from "../../context/AuthContext";
-import { supabase } from "../../utils/supabase";
-import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/utils/supabase";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 export default function ProfileScreen() {
   const { user } = useAuth();

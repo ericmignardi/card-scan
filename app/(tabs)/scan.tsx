@@ -1,11 +1,11 @@
 import React, { useState, useRef } from "react";
 import { StyleSheet, Text, TouchableOpacity, View, Image, ActivityIndicator, Alert } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import * as ImageManipulator from "expo-image-manipulator";
-import { Ionicons } from "@expo/vector-icons";
+import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import { supabase } from "../../utils/supabase";
-import { useAuth } from "../../context/AuthContext";
+import { supabase } from "@/utils/supabase";
+import { useAuth } from "@/context/AuthContext";
 
 type ScanStep = "front" | "back" | "review";
 
@@ -49,11 +49,13 @@ export default function ScanScreen() {
   }
 
   async function preprocessImage(uri: string): Promise<string> {
-    const result = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: 1200 } }],
-      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-    );
+    const context = ImageManipulator.manipulate(uri);
+    const rendered = await context.resize({ width: 1200 }).renderAsync();
+    const result = await rendered.saveAsync({
+      compress: 0.7,
+      format: SaveFormat.JPEG,
+    });
+    context.release();
     return result.uri;
   }
 
@@ -226,7 +228,7 @@ export default function ScanScreen() {
 
   return (
     <View className="flex-1 bg-black">
-      <CameraView style={StyleSheet.absoluteFillObject} ref={cameraRef}>
+      <CameraView style={StyleSheet.absoluteFill} ref={cameraRef}>
         <View className="flex-1 justify-between bg-black/40 py-16 px-6">
           <View className="items-center">
             <Text className="text-2xl font-black text-white text-center tracking-wide">
