@@ -39,6 +39,12 @@
           }
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow CardScanner to access your camera to scan sports cards."
+        }
+      ],
       "expo-font",
       "expo-web-browser"
     ],

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View, Image, ScrollView } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { supabase } from "@/utils/supabase";
@@ -32,40 +32,36 @@ export default function InventoryScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const [cards, setCards] = useState<Card[]>([]);
-  const [filteredCards, setFilteredCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   // Load cards from local device cache (AsyncStorage)
-  const loadCachedCards = async () => {
+  const loadCachedCards = useCallback(async () => {
     if (!user) return;
     try {
       const cached = await AsyncStorage.getItem(`cached_cards_${user.id}`);
       if (cached) {
         const parsed = JSON.parse(cached);
         setCards(parsed);
-        applyFiltersAndSearch(parsed, selectedCategory, searchQuery);
       }
     } catch (err) {
       console.warn("Failed to load cached cards:", err);
     }
-  };
+  }, [user]);
 
   // Fetch cards from remote Supabase DB
-  const fetchCards = async (showLoader = true) => {
+  const fetchCards = useCallback(async (showLoader = true) => {
     if (!user) return;
     if (showLoader && cards.length === 0) setLoading(true);
 
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from("cards")
         .select("id, player_name, brand, year, sport, front_image_url, is_rookie, is_autographed")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-
-      const { data, error } = await query;
 
       if (error) {
         throw error;
@@ -73,7 +69,6 @@ export default function InventoryScreen() {
 
       const fetchedCards = data || [];
       setCards(fetchedCards);
-      applyFiltersAndSearch(fetchedCards, selectedCategory, searchQuery);
 
       // Save fresh data to local cache
       await AsyncStorage.setItem(`cached_cards_${user.id}`, JSON.stringify(fetchedCards));
@@ -83,7 +78,7 @@ export default function InventoryScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [user, cards.length]);
 
   // Trigger cache load and network refresh on focus
   useFocusEffect(
@@ -91,25 +86,25 @@ export default function InventoryScreen() {
       loadCachedCards().then(() => {
         fetchCards(false);
       });
-    }, [user])
+    }, [loadCachedCards, fetchCards])
   );
 
-  // Apply search/pill filters locally
-  const applyFiltersAndSearch = (allCards: Card[], category: string, search: string) => {
-    let result = [...allCards];
+  // Compute filtered cards locally using useMemo
+  const filteredCards = useMemo(() => {
+    let result = [...cards];
 
-    if (category !== "all") {
-      if (category === "rookies") {
+    if (selectedCategory !== "all") {
+      if (selectedCategory === "rookies") {
         result = result.filter((c) => c.is_rookie);
-      } else if (category === "autographs") {
+      } else if (selectedCategory === "autographs") {
         result = result.filter((c) => c.is_autographed);
       } else {
-        result = result.filter((c) => c.sport === category);
+        result = result.filter((c) => c.sport === selectedCategory);
       }
     }
 
-    if (search.trim()) {
-      const query = search.toLowerCase();
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
       result = result.filter(
         (c) =>
           c.player_name.toLowerCase().includes(query) ||
@@ -118,17 +113,15 @@ export default function InventoryScreen() {
       );
     }
 
-    setFilteredCards(result);
-  };
+    return result;
+  }, [cards, selectedCategory, searchQuery]);
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
-    applyFiltersAndSearch(cards, categoryId, searchQuery);
   };
 
   const handleSearchChange = (text: string) => {
     setSearchQuery(text);
-    applyFiltersAndSearch(cards, selectedCategory, text);
   };
 
   const handleRefresh = () => {
@@ -249,7 +242,6 @@ export default function InventoryScreen() {
                 onPress={() => {
                   setSearchQuery("");
                   setSelectedCategory("all");
-                  applyFiltersAndSearch(cards, "all", "");
                 }}
                 className="mt-6 border border-border px-5 py-2.5 rounded-full"
               >

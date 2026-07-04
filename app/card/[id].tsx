@@ -48,7 +48,7 @@ export default function CardDetailsScreen() {
     if (id) {
       fetchCardDetails();
     }
-  }, [id]);
+  }, [id, router]);
 
   // Utility to extract storage path from public URL
   function getStoragePathFromUrl(url: string): string | null {
