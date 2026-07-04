@@ -56,6 +56,7 @@ export default function ScanScreen() {
       format: SaveFormat.JPEG,
     });
     context.release();
+    rendered.release();
     return result.uri;
   }
 
