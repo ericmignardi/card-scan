@@ -1,3 +1,11 @@
+import { Sport } from "@/constants/theme";
+
+export interface ParallelAttributes {
+  serial_num?: string;
+  color?: string;
+  variation?: string;
+}
+
 export interface CardDetails {
   id: string;
   front_image_url: string;
@@ -11,10 +19,27 @@ export interface CardDetails {
   is_insert: boolean;
   is_autographed: boolean;
   is_memorabilia: boolean;
-  parallel_attributes: {
-    serial_num?: string;
-    color?: string;
-    variation?: string;
-  };
+  parallel_attributes: ParallelAttributes;
   created_at: string;
 }
+
+export type CardSummary = Pick<
+  CardDetails,
+  "id" | "player_name" | "brand" | "year" | "sport" | "front_image_url" | "is_rookie" | "is_autographed"
+>;
+
+// Shape returned by the identify-card edge function.
+export interface AICardResult {
+  sport: Sport;
+  player_name: string;
+  year: number;
+  brand: string;
+  card_number: string;
+  is_rookie: boolean;
+  is_insert: boolean;
+  is_autographed: boolean;
+  is_memorabilia: boolean;
+  parallel_attributes: Required<ParallelAttributes>;
+}
+
+export type NewCardInput = Omit<CardDetails, "id" | "created_at"> & { user_id: string };

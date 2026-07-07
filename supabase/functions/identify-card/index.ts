@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.110.1";
 import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
 const corsHeaders = {
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     const backBase64 = encodeBase64(backFile);
 
     // 6. Invoke Gemini API
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
 
     const promptText = `
       You are an expert sports card appraiser and cataloger. You are given two images:

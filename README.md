@@ -1,13 +1,11 @@
 # Sports Card Scanner Mobile App 🃏
 
-An AI-powered React Native/Expo application that scans both the front and back of sports cards (Baseball, Basketball, Football, Soccer, Hockey), identifies them using the Gemini 1.5 Flash API via Supabase Edge Functions, and stores them in a personal cloud inventory database.
+An AI-powered React Native/Expo application that scans both the front and back of sports cards (Baseball, Basketball, Football, Soccer, Hockey), identifies them using the Gemini 2.5 Flash API via Supabase Edge Functions, and stores them in a personal cloud inventory database.
 
 ---
 
 ## 📑 Core Reference Documents
-Before writing any code, familiarize yourself with our project blueprints:
-1.  **[Product Requirements Document (PRD.md)](file:///c:/Users/migna/OneDrive/Desktop/card-scan/PRD.md)**: Defines the app's features, functional scope, database entities/schemas, and system architecture.
-2.  **[Sprint Implementation Plan (PLAN.md)](file:///c:/Users/migna/OneDrive/Desktop/card-scan/PLAN.md)**: Your step-by-step developer roadmap. Organized into 7 agile sprints with learning guidelines and detailed tasks.
+*   **[Product Requirements Document (PRD.md)](./PRD.md)**: Defines the app's features, functional scope, database entities/schemas, and system architecture.
 
 ---
 
@@ -17,90 +15,73 @@ Before writing any code, familiarize yourself with our project blueprints:
 card-scan/
 ├── app/                     # Expo Router (file-based navigation)
 │   ├── (tabs)/              # Main screens: Inventory (index), Scanner (scan), Profile (profile)
-│   ├── (auth)/              # Authentication screens (login, signup)
-│   ├── card/                # Stack screens: Card Details ([id].tsx)
+│   ├── (auth)/              # Authentication screens (login)
+│   ├── card/                # Stack screens: Card Details ([id].tsx), Confirm (confirm.tsx)
 │   ├── _layout.tsx          # Root navigation config & NativeWind styling import
 │   └── index.tsx            # Initial routing gatekeeper
 ├── assets/                  # Images, fonts, and application logos
-├── components/              # Shared UI components (inputs, card items, buttons, camera overlay)
-├── context/                 # State management providers (e.g. AuthContext)
-├── supabase/                # Supabase configurations and serverless code
-│   ├── migrations/          # SQL database schemas & Row-Level Security (RLS) scripts
-│   └── functions/           # Deno Serverless Edge Functions (e.g. identify-card)
-├── utils/                   # Shared utility logic (e.g. supabaseClient.ts)
-├── tailwind.config.js       # NativeWind styling theme configurations
-├── package.json             # Frontend node dependencies
-└── README.md                # This document!
+├── components/ui/           # Shared UI components (Button, FormField, CardImageTile, etc.)
+├── constants/                # Theme colors, sport list
+├── context/                  # State management providers (AuthContext)
+├── hooks/                    # Screen-level logic (useCards, useCardScanner)
+├── services/                 # Supabase data access (cards, storage, identify)
+├── supabase/                 # Supabase configuration and serverless code
+│   ├── migrations/           # SQL database schema, storage bucket, and RLS scripts
+│   └── functions/            # Deno Edge Functions (identify-card)
+├── utils/                     # Supabase client setup
+├── tailwind.config.js         # NativeWind styling theme configuration
+├── package.json                # Frontend node dependencies
+└── README.md                   # This document!
 ```
 
 ---
 
 ## ⚙️ Prerequisites
 
-To run this application locally, you will need to install and configure the following:
-1.  **Node.js** (v20 or higher recommended)
-2.  **Docker Desktop** (Required to run the local Supabase emulator)
-3.  **Supabase CLI** (For database migrations, local storage setup, and edge functions testing)
-    *   *Windows installation via Scoop*: `scoop bucket add supabase https://github.com/supabase/scoop-bucket.git && scoop install supabase`
-    *   *Windows installation via NPM*: `npm install -g supabase`
-4.  **Expo Go** app (latest version from App Store / Play Store) or an emulator (Android Studio / Xcode). Note: Expo Go only supports the latest SDK — if your Expo Go version doesn't match, use a [Development Build](https://docs.expo.dev/develop/development-builds/introduction/) instead.
+1.  **Node.js** (v20 or higher)
+2.  A [Supabase](https://supabase.com) project (free tier is fine) — used as the backend for auth, database, storage, and the `identify-card` edge function.
+3.  A [Google AI Studio](https://aistudio.google.com/) API key for Gemini, set as the `GEMINI_API_KEY` secret on your Supabase project's edge functions.
+4.  **Expo Go** app (latest version from the App Store / Play Store). Expo Go only runs the *current* Expo SDK — if the app fails to load, check `AGENTS.md` for how to catch this project up.
 
 ---
 
 ## 🚀 Getting Started
 
-Follow these steps to set up the frontend and backend locally:
-
 ### 1. Backend Setup (Supabase)
-Ensure your Docker Desktop is running before executing backend commands:
+Create a Supabase project, then link and push this repo's migrations to it (this creates the `profiles`/`cards` tables, the `card-images` storage bucket, and all RLS policies):
 
 ```bash
-# Initialize local Supabase configurations
-supabase init
-
-# Start local Supabase services (downloads Docker containers and seeds database)
-supabase start
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+npx supabase db push
 ```
 
-Once started, the CLI will output your local API keys and URL configurations:
-*   **Studio URL**: `http://localhost:54321` (database management GUI)
-*   **API URL**: `http://localhost:54321`
-*   **Anon Key**: (used in client-side config)
+Deploy the edge function and set its secret:
 
-Create your Edge Function credentials:
 ```bash
-# Set your Gemini API Key in the local Supabase environment secrets
-supabase secrets set GEMINI_API_KEY=your_gemini_api_key_here
+npx supabase functions deploy identify-card
+npx supabase secrets set GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ### 2. Frontend Configuration
-1.  Create a `.env.local` file in the root directory.
-2.  Populate it with the local Supabase credentials outputted by `supabase start`:
+Create a `.env.local` file in the root directory with your project's API URL and publishable key (found in your Supabase project's API settings):
 
 ```env
-EXPO_PUBLIC_SUPABASE_URL=http://localhost:54321
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_local_anon_key_here
+EXPO_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_publishable_key_here
 ```
 
 ### 3. Running the App
-Install dependencies and launch the Expo development packager:
 
 ```bash
-# Install NPM dependencies
 npm install
-
-# Start the Expo Metro bundler (clear cache on first run)
-npx expo start -c
+npx expo start
 ```
 
-*   **iOS Simulator**: Press `i` to open in Xcode simulator.
-*   **Android Emulator**: Press `a` to open in Android Studio.
-*   **Physical Device**: Scan the QR code shown in the terminal using your phone's camera (iOS) or the Expo Go App (Android). Make sure your mobile device is on the same local Wi-Fi network as your computer!
+Scan the QR code with the Expo Go app on your phone — your phone and computer need to be on the same Wi-Fi network. Press `a` for an Android emulator or `i` for an iOS simulator if you have one configured.
 
 ---
 
-## 🤝 Project Roles & Agile Iterations
-*   **Your Role**: Developer / Engineer. You will be writing 100% of the code, learning how to configure navigation, interface with phone cameras, manipulate image compression, upload assets to cloud storage, spin up serverless functions, write SQL queries, and prompt generative models.
-*   **My Role (Antigravity)**: Senior Developer / Project Manager. I will guide you, check your work, review code blocks, explain errors, write plans, and ensure that your database structures are safe, performant, and secure.
+## 🧪 Local Supabase (optional)
 
-Refer to **[PLAN.md](file:///c:/Users/migna/OneDrive/Desktop/card-scan/PLAN.md)** to begin Sprint 1!
+For fully offline development, `supabase/config.toml` is set up for the local CLI stack (`npx supabase start`, requires Docker Desktop). Point `.env.local` at `http://127.0.0.1:54321` and the local anon key printed by `supabase start` to use it instead of a hosted project.

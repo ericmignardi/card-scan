@@ -16,11 +16,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     // 1. Get initial session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      })
+      .catch((err) => {
+        console.warn("AuthContext: Error getting initial session", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
 
     // 2. Listen for auth state changes
     const {

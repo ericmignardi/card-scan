@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
+import { Button } from "@/components/ui/Button";
+import { FormField } from "@/components/ui/FormField";
 import { supabase } from "@/utils/supabase";
 
 export default function AuthScreen() {
@@ -72,64 +74,43 @@ export default function AuthScreen() {
         </Text>
 
         {isSignUp && (
-          <View className="mb-4">
-            <Text className="text-foreground-muted text-sm font-semibold mb-2">Username</Text>
-            <TextInput
-              className="bg-background text-white border border-border rounded-xl px-4 py-3 focus:border-primary"
-              placeholder="choose_username"
-              placeholderTextColor="#64748b"
-              autoCapitalize="none"
-              value={username}
-              onChangeText={setUsername}
-            />
-          </View>
+          <FormField
+            label="Username"
+            containerClassName="mb-4"
+            placeholder="choose_username"
+            autoCapitalize="none"
+            value={username}
+            onChangeText={setUsername}
+          />
         )}
 
-        <View className="mb-4">
-          <Text className="text-foreground-muted text-sm font-semibold mb-2">Email Address</Text>
-          <TextInput
-            className="bg-background text-white border border-border rounded-xl px-4 py-3 focus:border-primary"
-            placeholder="you@example.com"
-            placeholderTextColor="#64748b"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-        </View>
+        <FormField
+          label="Email Address"
+          containerClassName="mb-4"
+          placeholder="you@example.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
+        />
 
-        <View className="mb-6">
-          <Text className="text-foreground-muted text-sm font-semibold mb-2">Password</Text>
-          <TextInput
-            className="bg-background text-white border border-border rounded-xl px-4 py-3 focus:border-primary"
-            placeholder="••••••••"
-            placeholderTextColor="#64748b"
-            secureTextEntry
-            autoCapitalize="none"
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
+        <FormField
+          label="Password"
+          containerClassName="mb-6"
+          placeholder="••••••••"
+          secureTextEntry
+          autoCapitalize="none"
+          value={password}
+          onChangeText={setPassword}
+        />
 
-        <TouchableOpacity
-          className="bg-primary py-4 rounded-xl shadow-lg flex-row justify-center items-center"
+        <Button
+          title={isSignUp ? "Create Account" : "Sign In"}
           onPress={handleAuth}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text className="text-white text-center font-bold text-lg">
-              {isSignUp ? "Create Account" : "Sign In"}
-            </Text>
-          )}
-        </TouchableOpacity>
+          loading={loading}
+        />
 
-        <TouchableOpacity
-          className="mt-6"
-          onPress={() => setIsSignUp(!isSignUp)}
-          disabled={loading}
-        >
+        <TouchableOpacity className="mt-6" onPress={() => setIsSignUp(!isSignUp)} disabled={loading}>
           <Text className="text-primary text-center text-sm font-semibold">
             {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
           </Text>

@@ -1,6 +1,6 @@
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import "@/global.css";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments, useRootNavigationState } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
@@ -12,9 +12,11 @@ function AuthGate() {
   const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const navigationState = useRootNavigationState();
 
   useEffect(() => {
-    if (isLoading) return;
+    // Wait until both the auth state has loaded and the root navigation state is ready
+    if (isLoading || !navigationState?.key) return;
 
     SplashScreen.hideAsync();
 
@@ -25,7 +27,7 @@ function AuthGate() {
     } else if (user && inAuthGroup) {
       router.replace("/(tabs)");
     }
-  }, [user, isLoading, segments, router]);
+  }, [user, isLoading, segments, router, navigationState]);
 
   if (isLoading) {
     return (

@@ -23,14 +23,14 @@ The **Sports Card Scanner** is a React Native/Expo mobile application designed f
 ---
 
 ## 3. Tech Stack
-*   **Frontend**: React Native, Expo (SDK 56), Expo Router (file-based navigation), Expo Camera, Expo Image Manipulator.
+*   **Frontend**: React Native, Expo (SDK 57), Expo Router (file-based navigation), Expo Camera, Expo Image Manipulator.
 *   **Styling**: NativeWind (Tailwind CSS for React Native).
 *   **Backend (BaaS)**: Supabase.
     *   **Authentication**: Supabase Auth (Email/Password credentials).
     *   **Database**: PostgreSQL with Row-Level Security (RLS).
     *   **File Storage**: Supabase Storage (for storing scanned card front/back images).
     *   **Serverless Code**: Supabase Edge Functions (Deno/TypeScript) for secure API calls.
-*   **AI Engine**: Gemini 1.5 Flash (via Google Generative AI SDK on the Edge Function) for fast, low-cost multimodal image analysis.
+*   **AI Engine**: Gemini 2.5 Flash (via Google Generative AI SDK on the Edge Function) for fast, low-cost multimodal image analysis.
 
 ---
 
@@ -57,7 +57,7 @@ The **Sports Card Scanner** is a React Native/Expo mobile application designed f
 *   The Edge Function:
     1. Downloads both images from Storage.
     2. Constructs a prompt for the Gemini API, attaching both images.
-    3. Calls the Gemini API using `gemini-1.5-flash` with a strict JSON Schema response requirement.
+    3. Calls the Gemini API using `gemini-2.5-flash` with a strict JSON Schema response requirement.
     4. Parses the JSON response and returns it to the React Native client.
 
 ### 4.4. Card Detail & Confirmation

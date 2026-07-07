@@ -1,21 +1,12 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View, Image, ScrollView } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
-import { supabase } from "@/utils/supabase";
+import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
+import { useCards } from "@/hooks/useCards";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { colors } from "@/constants/theme";
+import { CardSummary } from "@/types/card";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-interface Card {
-  id: string;
-  player_name: string;
-  brand: string;
-  year: number;
-  sport: string;
-  front_image_url: string;
-  is_rookie: boolean;
-  is_autographed: boolean;
-}
 
 const CATEGORIES = [
   { id: "all", label: "All Cards" },
@@ -31,65 +22,10 @@ const CATEGORIES = [
 export default function InventoryScreen() {
   const { user } = useAuth();
   const router = useRouter();
-  const [cards, setCards] = useState<Card[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { cards, loading, refreshing, refresh } = useCards(user?.id);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  // Load cards from local device cache (AsyncStorage)
-  const loadCachedCards = useCallback(async () => {
-    if (!user) return;
-    try {
-      const cached = await AsyncStorage.getItem(`cached_cards_${user.id}`);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        setCards(parsed);
-      }
-    } catch (err) {
-      console.warn("Failed to load cached cards:", err);
-    }
-  }, [user]);
-
-  // Fetch cards from remote Supabase DB
-  const fetchCards = useCallback(async (showLoader = true) => {
-    if (!user) return;
-    if (showLoader && cards.length === 0) setLoading(true);
-
-    try {
-      const { data, error } = await supabase
-        .from("cards")
-        .select("id, player_name, brand, year, sport, front_image_url, is_rookie, is_autographed")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      const fetchedCards = data || [];
-      setCards(fetchedCards);
-
-      // Save fresh data to local cache
-      await AsyncStorage.setItem(`cached_cards_${user.id}`, JSON.stringify(fetchedCards));
-    } catch (err) {
-      console.error("Error fetching cards from network:", err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [user, cards.length]);
-
-  // Trigger cache load and network refresh on focus
-  useFocusEffect(
-    useCallback(() => {
-      loadCachedCards().then(() => {
-        fetchCards(false);
-      });
-    }, [loadCachedCards, fetchCards])
-  );
-
-  // Compute filtered cards locally using useMemo
   const filteredCards = useMemo(() => {
     let result = [...cards];
 
@@ -116,27 +52,16 @@ export default function InventoryScreen() {
     return result;
   }, [cards, selectedCategory, searchQuery]);
 
-  const handleCategorySelect = (categoryId: string) => {
-    setSelectedCategory(categoryId);
-  };
+  const hasActiveFilters = searchQuery !== "" || selectedCategory !== "all";
 
-  const handleSearchChange = (text: string) => {
-    setSearchQuery(text);
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchCards(false);
-  };
-
-  const renderCardItem = ({ item }: { item: Card }) => (
+  const renderCardItem = ({ item }: { item: CardSummary }) => (
     <TouchableOpacity
       className="w-[48%] bg-background-card border border-border rounded-2xl overflow-hidden mb-4 shadow-sm"
       onPress={() => router.push(`/card/${item.id}`)}
     >
       <View className="aspect-[3/4] w-full bg-slate-900 relative">
         <Image source={{ uri: item.front_image_url }} className="w-full h-full" resizeMode="cover" />
-        
+
         {item.is_rookie && (
           <View className="absolute top-2 left-2 bg-rookie px-2 py-0.5 rounded-md border border-yellow-400/20 shadow">
             <Text className="text-black text-[9px] font-black">RC</Text>
@@ -171,13 +96,13 @@ export default function InventoryScreen() {
 
       <View className="px-6 mb-4">
         <View className="bg-background-card border border-border rounded-xl px-4 py-3 flex-row items-center">
-          <Ionicons name="search" size={20} color="#64748b" style={{ marginRight: 8 }} />
+          <Ionicons name="search" size={20} color={colors.foregroundMuted} style={{ marginRight: 8 }} />
           <TextInput
             className="flex-1 text-white text-base"
             placeholder="Search by player, brand, or year..."
             placeholderTextColor="#64748b"
             value={searchQuery}
-            onChangeText={handleSearchChange}
+            onChangeText={setSearchQuery}
             clearButtonMode="while-editing"
           />
         </View>
@@ -194,7 +119,7 @@ export default function InventoryScreen() {
             return (
               <TouchableOpacity
                 key={cat.id}
-                onPress={() => handleCategorySelect(cat.id)}
+                onPress={() => setSelectedCategory(cat.id)}
                 className={`mr-2.5 px-4 py-2 rounded-full border ${
                   isActive ? "bg-primary border-primary" : "bg-background-card border-border"
                 }`}
@@ -210,7 +135,7 @@ export default function InventoryScreen() {
 
       {loading ? (
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : filteredCards.length > 0 ? (
         <FlatList
@@ -221,34 +146,30 @@ export default function InventoryScreen() {
           columnWrapperStyle={{ justifyContent: "space-between", paddingHorizontal: 24 }}
           contentContainerStyle={{ paddingBottom: 40 }}
           refreshing={refreshing}
-          onRefresh={handleRefresh}
+          onRefresh={refresh}
         />
       ) : (
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 24 }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <View className="items-center pb-24">
-            <Ionicons name="albums-outline" size={64} color="#334155" />
-            <Text className="text-white text-xl font-bold mt-4 text-center">
-              {searchQuery || selectedCategory !== "all" ? "No matches found" : "Your catalog is empty"}
-            </Text>
-            <Text className="text-foreground-muted text-sm text-center mt-2 max-w-xs">
-              {searchQuery || selectedCategory !== "all"
+          <EmptyState
+            icon="albums-outline"
+            title={hasActiveFilters ? "No matches found" : "Your catalog is empty"}
+            subtitle={
+              hasActiveFilters
                 ? "Try adjusting your search criteria or resetting filters."
-                : "Tap the Scanner tab at the bottom to crop and identify your first sports card!"}
-            </Text>
-            {(searchQuery || selectedCategory !== "all") && (
-              <TouchableOpacity
-                onPress={() => {
-                  setSearchQuery("");
-                  setSelectedCategory("all");
-                }}
-                className="mt-6 border border-border px-5 py-2.5 rounded-full"
-              >
-                <Text className="text-primary font-bold text-sm">Reset Filters</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+                : "Tap the Scanner tab at the bottom to crop and identify your first sports card!"
+            }
+            actionLabel={hasActiveFilters ? "Reset Filters" : undefined}
+            onAction={
+              hasActiveFilters
+                ? () => {
+                    setSearchQuery("");
+                    setSelectedCategory("all");
+                  }
+                : undefined
+            }
+          />
         </ScrollView>
       )}
     </View>
