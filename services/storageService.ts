@@ -5,14 +5,11 @@ const BUCKET = "card-images";
 export async function uploadCardImage(userId: string, uri: string, side: "front" | "back"): Promise<string> {
   const path = `${userId}/${Date.now()}_${side}.jpg`;
 
-  const formData = new FormData();
-  formData.append("file", {
-    uri,
-    name: `${side}.jpg`,
-    type: "image/jpeg",
-  } as unknown as Blob);
+  // Supabase's React Native guidance uploads raw bytes via arraybuffer rather than
+  // FormData, which has known issues with file uploads on RN's fetch polyfill.
+  const arraybuffer = await fetch(uri).then((res) => res.arrayBuffer());
 
-  const { data, error } = await supabase.storage.from(BUCKET).upload(path, formData, {
+  const { data, error } = await supabase.storage.from(BUCKET).upload(path, arraybuffer, {
     contentType: "image/jpeg",
     upsert: true,
   });

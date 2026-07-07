@@ -41,7 +41,9 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow CardScanner to access your camera to scan sports cards."
+          "cameraPermission": "Allow CardScanner to access your camera to scan sports cards.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
         }
       ],
       "expo-font",

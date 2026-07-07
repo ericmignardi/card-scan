@@ -11,11 +11,16 @@ export type ScanStep = "front" | "back" | "review";
 
 async function preprocessImage(uri: string): Promise<string> {
   const context = ImageManipulator.manipulate(uri);
-  const rendered = await context.resize({ width: 1200 }).renderAsync();
-  const result = await rendered.saveAsync({ compress: 0.7, format: SaveFormat.JPEG });
-  context.release();
-  rendered.release();
-  return result.uri;
+  try {
+    const rendered = await context.resize({ width: 1200 }).renderAsync();
+    try {
+      return (await rendered.saveAsync({ compress: 0.7, format: SaveFormat.JPEG })).uri;
+    } finally {
+      rendered.release();
+    }
+  } finally {
+    context.release();
+  }
 }
 
 // Owns the double-capture -> upload -> identify flow for the Scan tab, so the screen

@@ -1,6 +1,7 @@
 import React from "react";
-import { ActivityIndicator, Image, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { colors } from "@/constants/theme";
+import { Image } from "@/components/ui/Image";
 
 interface CardImageTileProps {
   uri: string | null | undefined;
@@ -14,7 +15,7 @@ export function CardImageTile({ uri, side }: CardImageTileProps) {
   return (
     <View className="w-[48%] aspect-[3/4] bg-background-card border border-border rounded-2xl overflow-hidden relative shadow-md">
       {uri ? (
-        <Image source={{ uri }} className="w-full h-full" resizeMode="cover" />
+        <Image source={{ uri }} className="w-full h-full" contentFit="cover" />
       ) : (
         <View className="w-full h-full items-center justify-center">
           <ActivityIndicator size="small" color={colors.primary} />

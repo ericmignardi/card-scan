@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View, Image, ScrollView } from "react-native";
+import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useCards } from "@/hooks/useCards";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Image } from "@/components/ui/Image";
 import { colors } from "@/constants/theme";
 import { CardSummary } from "@/types/card";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -60,7 +61,7 @@ export default function InventoryScreen() {
       onPress={() => router.push(`/card/${item.id}`)}
     >
       <View className="aspect-[3/4] w-full bg-slate-900 relative">
-        <Image source={{ uri: item.front_image_url }} className="w-full h-full" resizeMode="cover" />
+        <Image source={{ uri: item.front_image_url }} className="w-full h-full" contentFit="cover" />
 
         {item.is_rookie && (
           <View className="absolute top-2 left-2 bg-rookie px-2 py-0.5 rounded-md border border-yellow-400/20 shadow">
