@@ -51,7 +51,8 @@ export default function ScanScreen() {
         <ActivityIndicator size="large" color={colors.primary} />
         <Text className="text-white text-xl font-bold mt-6 text-center">Analyzing Card...</Text>
         <Text className="text-foreground-muted text-sm text-center mt-2 max-w-xs">
-          Our AI is reading logos, card numbers, player stats, and detecting rookie status. This takes a few seconds.
+          Our AI is reading logos, card numbers, and player stats, and detecting rookie and Hall of Fame status.
+          This takes a few seconds.
         </Text>
       </View>
     );

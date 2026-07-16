@@ -14,6 +14,7 @@ module.exports = {
         accent: "#14b8a6",            // Neon scan teal
         border: "#1e293b",            // Subtle border grey
         rookie: "#eab308",            // Gold Rookie badge
+        hof: "#b45309",               // Bronze plaque Hall of Fame badge
       },
     },
   },

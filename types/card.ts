@@ -16,6 +16,7 @@ export interface CardDetails {
   brand: string;
   card_number: string;
   is_rookie: boolean;
+  is_hall_of_famer: boolean;
   is_insert: boolean;
   is_autographed: boolean;
   is_memorabilia: boolean;
@@ -25,7 +26,15 @@ export interface CardDetails {
 
 export type CardSummary = Pick<
   CardDetails,
-  "id" | "player_name" | "brand" | "year" | "sport" | "front_image_url" | "is_rookie" | "is_autographed"
+  | "id"
+  | "player_name"
+  | "brand"
+  | "year"
+  | "sport"
+  | "front_image_url"
+  | "is_rookie"
+  | "is_hall_of_famer"
+  | "is_autographed"
 >;
 
 // Shape returned by the identify-card edge function.
@@ -36,6 +45,7 @@ export interface AICardResult {
   brand: string;
   card_number: string;
   is_rookie: boolean;
+  is_hall_of_famer: boolean;
   is_insert: boolean;
   is_autographed: boolean;
   is_memorabilia: boolean;

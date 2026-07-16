@@ -2,7 +2,8 @@ import { CardDetails, CardSummary, NewCardInput } from "@/types/card";
 import { supabase } from "@/utils/supabase";
 import { getStoragePathFromUrl, removeCardImages } from "./storageService";
 
-const SUMMARY_COLUMNS = "id, player_name, brand, year, sport, front_image_url, is_rookie, is_autographed";
+const SUMMARY_COLUMNS =
+  "id, player_name, brand, year, sport, front_image_url, is_rookie, is_hall_of_famer, is_autographed";
 
 export async function listCards(userId: string): Promise<CardSummary[]> {
   const { data, error } = await supabase

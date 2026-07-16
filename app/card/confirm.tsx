@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Alert, ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { insertCard } from "@/services/cardsService";
 import { getCardImagePublicUrl, removeCardImages } from "@/services/storageService";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { CardImageTile } from "@/components/ui/CardImageTile";
 import { FormField } from "@/components/ui/FormField";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
+import { ToggleRow } from "@/components/ui/ToggleRow";
 
 export default function ConfirmCardScreen() {
   const { user } = useAuth();
@@ -25,6 +26,7 @@ export default function ConfirmCardScreen() {
   const [cardNumber, setCardNumber] = useState(initialData.card_number || "");
   const [sport, setSport] = useState<Sport>(initialData.sport || "Baseball");
   const [isRookie, setIsRookie] = useState(initialData.is_rookie || false);
+  const [isHallOfFamer, setIsHallOfFamer] = useState(initialData.is_hall_of_famer || false);
   const [isInsert, setIsInsert] = useState(initialData.is_insert || false);
   const [isAutographed, setIsAutographed] = useState(initialData.is_autographed || false);
   const [isMemorabilia, setIsMemorabilia] = useState(initialData.is_memorabilia || false);
@@ -66,6 +68,7 @@ export default function ConfirmCardScreen() {
         brand: brand.trim(),
         card_number: cardNumber.trim(),
         is_rookie: isRookie,
+        is_hall_of_famer: isHallOfFamer,
         is_insert: isInsert,
         is_autographed: isAutographed,
         is_memorabilia: isMemorabilia,
@@ -173,22 +176,16 @@ export default function ConfirmCardScreen() {
         <View className="border-t border-border/50 my-2" />
 
         <View className="space-y-3">
-          <View className="flex-row justify-between items-center">
-            <Text className="text-white text-sm font-semibold">Rookie Card (RC)</Text>
-            <Switch value={isRookie} onValueChange={setIsRookie} trackColor={{ true: "#3b82f6" }} />
-          </View>
-          <View className="flex-row justify-between items-center">
-            <Text className="text-white text-sm font-semibold">Insert Card</Text>
-            <Switch value={isInsert} onValueChange={setIsInsert} trackColor={{ true: "#3b82f6" }} />
-          </View>
-          <View className="flex-row justify-between items-center">
-            <Text className="text-white text-sm font-semibold">Autographed</Text>
-            <Switch value={isAutographed} onValueChange={setIsAutographed} trackColor={{ true: "#3b82f6" }} />
-          </View>
-          <View className="flex-row justify-between items-center">
-            <Text className="text-white text-sm font-semibold">Memorabilia/Relic</Text>
-            <Switch value={isMemorabilia} onValueChange={setIsMemorabilia} trackColor={{ true: "#3b82f6" }} />
-          </View>
+          <ToggleRow label="Rookie Card (RC)" value={isRookie} onValueChange={setIsRookie} />
+          <ToggleRow
+            label="Hall of Famer"
+            hint="Player is inducted — not printed on the card, so double-check recent inductions."
+            value={isHallOfFamer}
+            onValueChange={setIsHallOfFamer}
+          />
+          <ToggleRow label="Insert Card" value={isInsert} onValueChange={setIsInsert} />
+          <ToggleRow label="Autographed" value={isAutographed} onValueChange={setIsAutographed} />
+          <ToggleRow label="Memorabilia/Relic" value={isMemorabilia} onValueChange={setIsMemorabilia} />
         </View>
 
         <View className="border-t border-border/50 my-2" />

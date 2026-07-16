@@ -17,8 +17,16 @@ const CATEGORIES = [
   { id: "Soccer", label: "Soccer" },
   { id: "Hockey", label: "Hockey" },
   { id: "rookies", label: "Rookies 🌟" },
+  { id: "hallOfFamers", label: "Hall of Famers 🏆" },
   { id: "autographs", label: "Autographs ✍️" },
 ];
+
+// Category ids that filter on a card attribute rather than on `sport`.
+const ATTRIBUTE_FILTERS: Record<string, (card: CardSummary) => boolean> = {
+  rookies: (card) => card.is_rookie,
+  hallOfFamers: (card) => card.is_hall_of_famer,
+  autographs: (card) => card.is_autographed,
+};
 
 export default function InventoryScreen() {
   const { user } = useAuth();
@@ -31,13 +39,10 @@ export default function InventoryScreen() {
     let result = [...cards];
 
     if (selectedCategory !== "all") {
-      if (selectedCategory === "rookies") {
-        result = result.filter((c) => c.is_rookie);
-      } else if (selectedCategory === "autographs") {
-        result = result.filter((c) => c.is_autographed);
-      } else {
-        result = result.filter((c) => c.sport === selectedCategory);
-      }
+      const attributeFilter = ATTRIBUTE_FILTERS[selectedCategory];
+      result = attributeFilter
+        ? result.filter(attributeFilter)
+        : result.filter((c) => c.sport === selectedCategory);
     }
 
     if (searchQuery.trim()) {
@@ -63,11 +68,18 @@ export default function InventoryScreen() {
       <View className="aspect-[3/4] w-full bg-slate-900 relative">
         <Image source={{ uri: item.front_image_url }} className="w-full h-full" contentFit="cover" />
 
-        {item.is_rookie && (
-          <View className="absolute top-2 left-2 bg-rookie px-2 py-0.5 rounded-md border border-yellow-400/20 shadow">
-            <Text className="text-black text-[9px] font-black">RC</Text>
-          </View>
-        )}
+        <View className="absolute top-2 left-2 flex-row">
+          {item.is_rookie && (
+            <View className="bg-rookie px-2 py-0.5 rounded-md border border-yellow-400/20 shadow mr-1">
+              <Text className="text-black text-[9px] font-black">RC</Text>
+            </View>
+          )}
+          {item.is_hall_of_famer && (
+            <View className="bg-hof px-2 py-0.5 rounded-md border border-amber-300/20 shadow">
+              <Text className="text-white text-[9px] font-black">HOF</Text>
+            </View>
+          )}
+        </View>
 
         <View className="absolute bottom-2 right-2 bg-black/60 px-2 py-0.5 rounded-md">
           <Text className="text-white text-[9px] font-semibold">{item.sport}</Text>

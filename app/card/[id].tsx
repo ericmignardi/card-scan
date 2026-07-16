@@ -144,7 +144,11 @@ export default function CardDetailsScreen() {
           </View>
         </View>
 
-        {(card.is_rookie || card.is_autographed || card.is_insert || card.is_memorabilia) && (
+        {(card.is_rookie ||
+          card.is_hall_of_famer ||
+          card.is_autographed ||
+          card.is_insert ||
+          card.is_memorabilia) && (
           <>
             <View className="border-t border-border/50 my-1" />
             <View>
@@ -153,6 +157,7 @@ export default function CardDetailsScreen() {
               </Text>
               <View className="flex-row flex-wrap">
                 {card.is_rookie && <Badge label="🌟 Rookie Card" className="bg-rookie" textClassName="text-black" />}
+                {card.is_hall_of_famer && <Badge label="🏆 Hall of Famer" className="bg-hof" />}
                 {card.is_autographed && <Badge label="✍️ Autographed" className="bg-blue-600/90" />}
                 {card.is_insert && <Badge label="✨ Insert / Subset" className="bg-purple-600/90" />}
                 {card.is_memorabilia && <Badge label="🎫 Relic / Memorabilia" className="bg-teal-600/90" />}

@@ -12,6 +12,7 @@ export const colors = {
   accent: "#14b8a6",
   border: "#1e293b",
   rookie: "#eab308",
+  hof: "#b45309",
   danger: "#ef4444",
 } as const;
 
