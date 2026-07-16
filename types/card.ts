@@ -9,7 +9,8 @@ export interface ParallelAttributes {
 export interface CardDetails {
   id: string;
   front_image_url: string;
-  back_image_url: string;
+  // Null for cards added by a lot scan, which only photographs the fronts.
+  back_image_url: string | null;
   sport: Sport;
   player_name: string;
   year: number;
@@ -59,5 +60,12 @@ export type CardFields = Omit<CardDetails, "id" | "created_at" | "front_image_ur
 export type NewCardInput = CardFields & {
   user_id: string;
   front_image_url: string;
-  back_image_url: string;
+  back_image_url: string | null;
 };
+
+// One card detected within a lot scan: the same fields a single scan produces, plus the
+// bounding box locating it in the group photo so the client can crop out its image.
+// Coordinates are [ymin, xmin, ymax, xmax], normalized 0-1000 against the full image.
+export interface AILotCard extends AICardResult {
+  box_2d: [number, number, number, number];
+}

@@ -2,8 +2,10 @@ import { supabase } from "@/utils/supabase";
 
 const BUCKET = "card-images";
 
-export async function uploadCardImage(userId: string, uri: string, side: "front" | "back"): Promise<string> {
-  const path = `${userId}/${Date.now()}_${side}.jpg`;
+// `label` only distinguishes files within a user's folder (e.g. "front", "back",
+// "lot", "lot_3"); it carries no meaning beyond making paths readable.
+export async function uploadCardImage(userId: string, uri: string, label: string): Promise<string> {
+  const path = `${userId}/${Date.now()}_${label}.jpg`;
 
   // Supabase's React Native guidance uploads raw bytes via arraybuffer rather than
   // FormData, which has known issues with file uploads on RN's fetch polyfill.

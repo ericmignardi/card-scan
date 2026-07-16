@@ -38,9 +38,10 @@ detail/edit/delete). Check off each step as you complete it.
 - [ ] Tap "Log Out" — expect to be returned to the Sign In screen.
 - [ ] Relaunch the app after logging out — should land back on Sign In (session cleared).
 
-## 3. Scan Flow — Happy Path
+## 3. Single Scan Flow — Happy Path
 
-- [ ] Sign in, go to the **Scanner** tab.
+- [ ] Sign in, go to the **Scanner** tab. It should open in **Single Card** mode by default,
+      with a Single Card / Lot toggle visible above the guide frame.
 - [ ] On first launch, expect a camera permission prompt. Tap "Grant Permission" (or
       confirm the OS prompt) — camera view should appear.
 - [ ] Camera view shows "Scan FRONT" with a dashed guide frame.
@@ -98,7 +99,50 @@ detail/edit/delete). Check off each step as you complete it.
 - [ ] (Optional, needs Supabase dashboard access) Verify the front/back images for the
       discarded scan were actually deleted from the `card-images` storage bucket.
 
-## 6. Inventory — Browse, Search, Filter
+## 6. Lot / Group Scan
+
+Lay out a handful of real cards face up in a grid (3×5 is a good target; try 6 first). A
+plain, contrasting surface helps. Mix in at least one Hall of Famer and one rookie.
+
+- [ ] On the Scanner tab, tap **Lot / Group** — the prompt changes to "Scan LOT", the guide
+      frame turns teal and square, and the shutter shows a grid icon.
+- [ ] The capture screen warns that fronts only are captured and back-printed card/serial
+      numbers won't be picked up.
+- [ ] Take a photo of the layout — you land on **Verify Photo** showing the full shot.
+- [ ] Tap "Retake Photo" — returns to the camera with the photo cleared.
+- [ ] Retake, then tap "Identify Cards" — expect an "Analyzing Lot..." screen (slower than
+      a single card).
+- [ ] You land on a results list headed "Found N cards". **N should match the number of
+      cards you actually laid out** — this is the single most important check in this
+      section.
+- [ ] Each row shows a cropped image of **that one card** (not the whole group photo, not a
+      neighbouring card). A wrong crop here means bounding boxes are misaligned.
+- [ ] Rows are in reading order (left to right, top to bottom) matching your layout.
+- [ ] Player names/years/brands are plausible for the cards you laid out.
+- [ ] Rookie cards show an RC badge; Hall of Famers show an HOF badge.
+- [ ] Card number and serial fields being blank is **expected** here, not a bug — there is
+      no back photo to read them from.
+- [ ] Tap a row — it dims and its check clears. The "Add N Cards" button count decrements.
+- [ ] Deselect every row — the Add button should disable.
+- [ ] Re-select a few, tap "Add N Cards to Collection" — expect a success alert naming the
+      count, then a return to Inventory.
+- [ ] Exactly the selected cards appear in Inventory, each with its own cropped image.
+      Deselected ones must **not** appear.
+- [ ] Open a lot-scanned card's details — the back image tile should read "No back image
+      (lot scan)" rather than spinning forever.
+- [ ] Edit a lot-scanned card and save — should work identically to a single-scanned card.
+- [ ] Delete a lot-scanned card — should succeed despite having no back image.
+- [ ] (Optional, needs Supabase dashboard access) Check `card-images`: the group photo
+      should **not** be there (it's removed once identification returns), and there should
+      be exactly one cropped image per saved card.
+- [ ] Run a lot scan and abandon it at the results list (switch tabs / back out) without
+      saving. Confirm no new images were left in the bucket.
+- [ ] Photograph a surface with **no cards** on it, tap Identify — expect a graceful "no
+      cards found" style alert, not a crash or an empty results screen.
+- [ ] Switch from Lot back to Single Card mode — the scanner should reset cleanly to the
+      "Scan FRONT" step with no leftover lot state.
+
+## 7. Inventory — Browse, Search, Filter
 
 - [ ] Inventory tab header shows the correct total card count ("Browsing N cards...").
 - [ ] Each card tile shows the correct front image, player name, year + brand.
@@ -125,7 +169,7 @@ detail/edit/delete). Check off each step as you complete it.
 - [ ] Pull down on the grid to refresh — loading indicator briefly shows, list
       reloads without duplicating entries.
 
-## 7. Card Details
+## 8. Card Details
 
 - [ ] Tap any card tile from Inventory — should open the Card Details modal.
 - [ ] Front and back images display correctly at full size.
@@ -137,7 +181,7 @@ detail/edit/delete). Check off each step as you complete it.
       "None"/"Base" placeholders for blanks; section is hidden if all three are empty.
 - [ ] Tap the back arrow — returns to Inventory.
 
-## 8. Card Edit
+## 9. Card Edit
 
 - [ ] Open a card's details — the header should show a pencil (edit) icon next to the
       trash icon.
@@ -157,7 +201,7 @@ detail/edit/delete). Check off each step as you complete it.
 - [ ] Edit a card and change only the sport chip — confirm the sport updates on the detail
       screen and the card moves between sport filters.
 
-## 9. Card Delete
+## 10. Card Delete
 
 - [ ] Open a card's details, tap the trash icon — expect a confirmation alert.
 - [ ] Tap "Cancel" — card should remain untouched.
@@ -166,7 +210,7 @@ detail/edit/delete). Check off each step as you complete it.
 - [ ] (Optional, needs Supabase dashboard access) Verify the deleted card's row is gone
       from the `cards` table and its images are gone from `card-images` storage.
 
-## 10. Navigation & Session Edge Cases
+## 11. Navigation & Session Edge Cases
 
 - [ ] With an active session, manually navigate to `/(auth)/login` (or force it via deep
       link) — app should redirect you back into the tabs instead of showing the login
@@ -182,7 +226,7 @@ detail/edit/delete). Check off each step as you complete it.
       been cleaned up, not left orphaned. Repeat the failure a couple of times and confirm
       the bucket does not accumulate files.
 
-## 11. Cross-Platform Sanity (if testing beyond the one iPhone)
+## 12. Cross-Platform Sanity (if testing beyond the one iPhone)
 
 - [ ] Repeat sections 3–4 on a second device/OS if available (Android via Expo Go, or
       `npx expo start --web`) to confirm no platform-specific regressions from the SDK

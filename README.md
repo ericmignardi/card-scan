@@ -4,6 +4,8 @@ An AI-powered React Native/Expo application that scans both the front and back o
 
 Beyond transcribing what's printed on the card, it flags the two attributes collectors care about most: **Rookie Cards**, read from the card's own logos and banners, and **Hall of Famers**, which appear nowhere on the card and are derived from the identified player's career. Because Hall of Fame status can change after a card is catalogued — and can fall past the model's knowledge cutoff — every field on a saved card remains editable.
 
+Cards can be scanned one at a time (front and back, full fidelity) or as a **lot**: lay a group out face up, take one photo, and every card is located, identified, cropped out, and added at once. A lot scan sees fronts only, so it trades back-of-card data (card number confirmation, serial numbering) for speed — but rookie and Hall of Fame status both survive it, since one is a front logo and the other comes from the player.
+
 ---
 
 ## 📑 Core Reference Documents
@@ -24,15 +26,18 @@ card-scan/
 │   ├── _layout.tsx          # Root navigation config & NativeWind styling import
 │   └── index.tsx            # Initial routing gatekeeper
 ├── assets/                  # Images, fonts, and application logos
-├── components/              # CardForm — the shared create/edit card form
+├── components/              # Scan flows (SingleScanFlow, LotScanFlow, LotResults) & CardForm
 │   └── ui/                  # Shared UI primitives (Button, FormField, CardImageTile, ToggleRow, etc.)
 ├── constants/                # Theme colors, sport list
 ├── context/                  # State management providers (AuthContext)
-├── hooks/                    # Screen-level logic (useCards, useCardScanner)
+├── hooks/                    # Screen-level logic (useCards, useCardScanner, useLotScanner)
 ├── services/                 # Supabase data access (cards, storage, identify)
 ├── supabase/                 # Supabase configuration and serverless code
 │   ├── migrations/           # SQL database schema, storage bucket, and RLS scripts
-│   └── functions/            # Deno Edge Functions (identify-card)
+│   └── functions/            # Deno Edge Functions
+│       ├── _shared/          # Prompt text, response schema, Gemini/Storage helpers (not a function)
+│       ├── identify-card/    # Single card: front + back
+│       └── identify-lot/     # Many cards in one photo, with bounding boxes
 ├── utils/                     # Supabase client setup
 ├── tailwind.config.js         # NativeWind styling theme configuration
 ├── package.json                # Frontend node dependencies
@@ -61,12 +66,15 @@ npx supabase link --project-ref <your-project-ref>
 npx supabase db push
 ```
 
-Deploy the edge function and set its secret:
+Deploy both edge functions and set the secret they share:
 
 ```bash
 npx supabase functions deploy identify-card
+npx supabase functions deploy identify-lot
 npx supabase secrets set GEMINI_API_KEY=your_gemini_api_key_here
 ```
+
+`identify-card` handles a single card (front + back); `identify-lot` handles one photo of many cards laid out together. Both import from `supabase/functions/_shared/`, which the CLI bundles into each deploy — it is not a function itself and is not deployed on its own.
 
 ### 2. Frontend Configuration
 Create a `.env.local` file in the root directory with your project's API URL and publishable key (found in your Supabase project's API settings):

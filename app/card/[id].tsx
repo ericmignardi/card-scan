@@ -116,7 +116,7 @@ export default function CardDetailsScreen() {
 
       <View className="flex-row justify-between mb-6">
         <CardImageTile uri={card.front_image_url} side="front" />
-        <CardImageTile uri={card.back_image_url} side="back" />
+        <CardImageTile uri={card.back_image_url} side="back" emptyText="No back image (lot scan)" />
       </View>
 
       <View className="bg-background-card p-5 rounded-2xl border border-border mb-6 space-y-4">

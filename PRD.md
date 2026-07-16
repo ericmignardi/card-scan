@@ -20,7 +20,7 @@ The **Sports Card Scanner** is a React Native/Expo mobile application designed f
 *   **The Hobbyist Collector**: Collects sports cards casually and wants an easy way to track what they own on their phone.
 *   **The Rookie Card Hunter**: Actively searches for Rookie Cards (RCs) and needs immediate confirmation if a logo or parallel detail matches rookie specifications.
 *   **The Hall of Fame Collector**: Focuses on cards of inducted players and needs to know at a glance which cards in a stack are Hall of Famers — including cards printed long before the player was inducted, where nothing on the card itself gives it away.
-*   **The Inventory Cataloger**: Has boxes of cards and wants to quickly scan front/back and add them to a database, filtering by sport or year.
+*   **The Inventory Cataloger**: Has boxes of cards and wants to get through them fast. Scanning front/back one card at a time does not scale to a shoebox, so this persona is the primary driver of the **lot scan**: lay out a grid of cards, take one photo, catalog them all. Accepts lower per-card fidelity in exchange for throughput.
 
 ---
 
@@ -32,7 +32,7 @@ The **Sports Card Scanner** is a React Native/Expo mobile application designed f
     *   **Authentication**: Supabase Auth (Email/Password credentials).
     *   **Database**: PostgreSQL with Row-Level Security (RLS).
     *   **File Storage**: Supabase Storage (for storing scanned card front/back images).
-    *   **Serverless Code**: Supabase Edge Functions (Deno/TypeScript) for secure API calls.
+    *   **Serverless Code**: Supabase Edge Functions (Deno/TypeScript) for secure API calls — `identify-card` (single card, front + back) and `identify-lot` (one photo of many cards), sharing prompt text and response schema via `functions/_shared/`.
 *   **AI Engine**: Gemini 2.5 Flash, called over the REST API from the Edge Function, for fast, low-cost multimodal image analysis.
 
 ---
@@ -73,7 +73,19 @@ The **Sports Card Scanner** is a React Native/Expo mobile application designed f
 *   **Save/Edit Screen**: The user can manually review and edit any field (e.g., in case of AI mismatch) before clicking "Add to Collection".
 *   **Discard**: The user can discard the scan, which deletes the files from Supabase Storage and returns to the scanner screen.
 
-### 4.5. Collection Inventory Management
+### 4.5. Lot / Group Scanning
+An alternative to the single-card flow, for cataloging many cards quickly. Selected via a mode toggle on the Scanner tab; the single-card flow is unchanged and remains the default.
+
+*   **Capture**: The user lays cards out face up in a grid, not overlapping, and takes **one** photo of the whole layout.
+*   **Fronts only**: A lot scan deliberately does not capture backs. Flipping a laid-out grid mirrors it, and any misalignment would silently attach one card's data to another — a wrong answer presented as a confident one. The cost is accepted explicitly:
+    *   **Retained**: player, year, brand, sport, `is_rookie` (front logo), `is_hall_of_famer` (derived from the player, not the card), `is_autographed`, `is_insert`, `is_memorabilia`.
+    *   **Lost**: card number confirmation from the back, back-stamped serial numbering. The prompt must instruct the model to return empty values for these rather than infer them.
+*   **Detection**: The Edge Function (`identify-lot`) returns one entry per card, each with a `box_2d` bounding box (`[ymin, xmin, ymax, xmax]`, normalized 0–1000) locating that card in the photo. Entries with an unusable box are discarded server-side.
+*   **Per-card images**: The client crops each card out of the original full-resolution capture using its bounding box, so every lot-scanned card gets its own front image and is indistinguishable from a single-scanned card in the inventory grid. `back_image_url` is null for these cards.
+*   **Review**: Detected cards are listed with their cropped image, identified traits, and rookie/HOF badges. The user deselects false positives and saves the rest in one write. Per-card corrections are made afterwards via the standard edit screen rather than by embedding a form per card in the review list.
+*   **Storage discipline**: The group photo is uploaded only so the Edge Function can read it, and is deleted as soon as identification returns. Individual card images are uploaded at save time, so abandoning the review leaves nothing behind.
+
+### 4.6. Collection Inventory Management
 *   Displays a list/grid of all saved cards.
 *   **Search**: Search cards by Player Name.
 *   **Filters**: Filter collection by Sport, Rookie status (`is_rookie`), Hall of Famer status (`is_hall_of_famer`), Autographed status (`is_autographed`), and Brand.
@@ -142,7 +154,7 @@ Stores the metadata and image references for scanned cards.
 | `id` | `uuid` | Primary Key, Default `gen_random_uuid()` | Unique card identifier |
 | `user_id` | `uuid` | References `profiles(id)` ON DELETE CASCADE | Owner of the card |
 | `front_image_url` | `text` | Not Null | Public URL/path of the front image in Storage |
-| `back_image_url` | `text` | Not Null | Public URL/path of the back image in Storage |
+| `back_image_url` | `text` | Nullable | Public URL/path of the back image in Storage. Null for cards added by a lot scan, which photographs fronts only |
 | `sport` | `text` | Not Null, Check Constraint | Must be: 'Baseball', 'Basketball', 'Football', 'Soccer', 'Hockey', or 'Other' |
 | `player_name` | `text` | Not Null | Extracted player name |
 | `year` | `integer` | Not Null | Copyright/release year of the card |

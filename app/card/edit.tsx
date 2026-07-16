@@ -65,6 +65,7 @@ export default function EditCardScreen() {
         initialValues={card}
         frontUrl={card.front_image_url}
         backUrl={card.back_image_url}
+        backEmptyText="No back image (lot scan)"
         submitting={saving}
         submitLabel="Save Changes"
         submitIcon="save-outline"

@@ -14,6 +14,7 @@ interface CardFormProps {
   initialValues?: Partial<CardFields>;
   frontUrl: string | null;
   backUrl: string | null;
+  backEmptyText?: string;
   submitting: boolean;
   submitLabel: string;
   submitIcon: IconName;
@@ -31,6 +32,7 @@ export function CardForm({
   initialValues = {},
   frontUrl,
   backUrl,
+  backEmptyText,
   submitting,
   submitLabel,
   submitIcon,
@@ -86,7 +88,7 @@ export function CardForm({
     <>
       <View className="flex-row justify-between mb-6">
         <CardImageTile uri={frontUrl} side="front" />
-        <CardImageTile uri={backUrl} side="back" />
+        <CardImageTile uri={backUrl} side="back" emptyText={backEmptyText} />
       </View>
 
       <View className="bg-background-card p-5 rounded-2xl border border-border mb-8 space-y-4">
