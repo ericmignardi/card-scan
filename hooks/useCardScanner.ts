@@ -1,6 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
 import { identifyCard } from "@/services/identifyService";
-import { uploadCardImage } from "@/services/storageService";
+import { removeCardImages, uploadCardImage } from "@/services/storageService";
 import { CameraView } from "expo-camera";
 import { useRouter } from "expo-router";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
@@ -77,12 +77,26 @@ export function useCardScanner() {
 
     setIdentifying(true);
 
+    // Images are uploaded before identification runs, so anything that fails after this
+    // point (a rejected upload, a failed identify) would strand them in the bucket. Track
+    // what actually landed so the catch can clean up; once we reach the confirm screen it
+    // takes over ownership and deletes them itself if the user discards the scan.
+    const uploadedPaths: string[] = [];
+
     try {
-      const [frontPath, backPath] = await Promise.all([
+      const uploads = await Promise.allSettled([
         uploadCardImage(user.id, frontImage, "front"),
         uploadCardImage(user.id, backImage, "back"),
       ]);
 
+      for (const upload of uploads) {
+        if (upload.status === "fulfilled") uploadedPaths.push(upload.value);
+      }
+
+      const failedUpload = uploads.find((upload): upload is PromiseRejectedResult => upload.status === "rejected");
+      if (failedUpload) throw failedUpload.reason;
+
+      const [frontPath, backPath] = uploadedPaths;
       const aiResult = await identifyCard(frontPath, backPath);
 
       router.push({
@@ -90,6 +104,7 @@ export function useCardScanner() {
         params: { frontPath, backPath, aiResult: JSON.stringify(aiResult) },
       });
     } catch (err: any) {
+      await removeCardImages(uploadedPaths);
       console.error("Scanning process failed:", err);
       Alert.alert("Identification Failed", err.message || "Failed to identify card. Try again under better lighting.");
       setIdentifying(false);

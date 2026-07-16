@@ -2,7 +2,7 @@
 
 Go through each section in order. Sections 1–3 must pass before later sections are
 meaningful (you need an authenticated session with a card in inventory to test
-detail/delete). Check off each step as you complete it.
+detail/edit/delete). Check off each step as you complete it.
 
 ## Setup
 
@@ -53,10 +53,19 @@ detail/delete). Check off each step as you complete it.
 - [ ] Redo both captures, then tap "Identify Card" — expect an "Analyzing Card..."
       loading screen.
 - [ ] Wait for analysis to finish — should land on **Confirm Details** with fields
-      (player, year, brand, card #, sport, rookie/insert/autograph/memorabilia toggles,
-      parallel attributes) pre-filled from the AI result.
+      (player, year, brand, card #, sport, rookie/Hall of Famer/insert/autograph/
+      memorabilia toggles, parallel attributes) pre-filled from the AI result.
 - [ ] Spot-check the AI-filled values are reasonable for the actual card scanned (player
       name, year, brand, sport at minimum).
+- [ ] Scan a card for a player who is **definitely** in the Hall of Fame (e.g. a Mantle,
+      Jordan, Gretzky, or Montana card) — the Hall of Famer toggle should come back ON.
+      Note this is judged from the player, not the card, so it should be on even for a
+      rookie card printed decades before induction.
+- [ ] Scan a card for a **current active player** — the Hall of Famer toggle should come
+      back OFF, no matter how strong the player is.
+- [ ] Scan a card for a player inducted very recently (within the last year or two) — this
+      is the case most likely to come back wrong, since it may fall past the model's
+      knowledge cutoff. A miss here is expected and correctable, not a bug.
 - [ ] Both front/back thumbnails on the Confirm screen display the actual photos taken
       (not broken images).
 
@@ -70,8 +79,10 @@ detail/delete). Check off each step as you complete it.
       you type.
 - [ ] Tap each sport chip (Baseball/Basketball/Football/Soccer/Hockey) — selected chip
       should highlight, only one active at a time.
-- [ ] Toggle each switch: Rookie Card, Insert Card, Autographed, Memorabilia/Relic —
-      switches should visibly flip on/off.
+- [ ] Toggle each switch: Rookie Card, Hall of Famer, Insert Card, Autographed,
+      Memorabilia/Relic — switches should visibly flip on/off.
+- [ ] The Hall of Famer row should show a hint line under its label reminding you to
+      double-check recent inductions.
 - [ ] Enter values in Serial Num, Color/Refractor, Variation fields.
 - [ ] Tap "Add to Collection" with valid data — expect a "Success" alert, then
       navigation back to the Inventory tab.
@@ -92,6 +103,9 @@ detail/delete). Check off each step as you complete it.
 - [ ] Inventory tab header shows the correct total card count ("Browsing N cards...").
 - [ ] Each card tile shows the correct front image, player name, year + brand.
 - [ ] Cards marked Rookie during scan show the "RC" badge on their tile.
+- [ ] Cards marked Hall of Famer show a bronze "HOF" badge on their tile.
+- [ ] A card marked **both** Rookie and Hall of Famer shows both badges side by side,
+      neither overlapping nor clipped off the tile.
 - [ ] Each tile shows the correct sport label in the bottom-right corner.
 - [ ] Type a player name into the search box — grid should filter to matches only (also
       test partial/lowercase matches).
@@ -100,6 +114,7 @@ detail/delete). Check off each step as you complete it.
 - [ ] Tap each sport category chip (Baseball, Basketball, etc.) — grid filters to that
       sport only; selected chip highlights.
 - [ ] Tap "Rookies 🌟" — only rookie-flagged cards shown.
+- [ ] Tap "Hall of Famers 🏆" — only Hall of Famer-flagged cards shown.
 - [ ] Tap "Autographs ✍️" — only autographed cards shown.
 - [ ] Tap "All Cards" — full list returns.
 - [ ] Combine a search query + a category filter — results should satisfy both.
@@ -115,14 +130,34 @@ detail/delete). Check off each step as you complete it.
 - [ ] Tap any card tile from Inventory — should open the Card Details modal.
 - [ ] Front and back images display correctly at full size.
 - [ ] Player, Brand, Card Number, Year, Sport all match what was saved.
-- [ ] Attribute badges (Rookie/Autographed/Insert/Memorabilia) only appear for
-      attributes that were actually toggled on; section is hidden entirely if none are
+- [ ] Attribute badges (Rookie/Hall of Famer/Autographed/Insert/Memorabilia) only appear
+      for attributes that were actually toggled on; section is hidden entirely if none are
       set.
 - [ ] Parallel Details section (Serial/Color/Variation) shows entered values, or
       "None"/"Base" placeholders for blanks; section is hidden if all three are empty.
 - [ ] Tap the back arrow — returns to Inventory.
 
-## 8. Card Delete
+## 8. Card Edit
+
+- [ ] Open a card's details — the header should show a pencil (edit) icon next to the
+      trash icon.
+- [ ] Tap the pencil — the **Edit Card** screen opens with every field pre-filled from the
+      saved card (player, year, brand, card #, sport chip, all five toggles, parallel
+      fields), and both card images shown.
+- [ ] Tap "Cancel" — returns to Card Details with nothing changed.
+- [ ] Tap the pencil again, clear the Player Name, and tap "Save Changes" — expect the
+      same validation alert as the confirm screen, no save.
+- [ ] Change the Player Name and flip the **Hall of Famer** toggle, then "Save Changes" —
+      expect a "Saved" alert, then return to Card Details.
+- [ ] Card Details should show the new values immediately on return (this screen refetches
+      on focus — a stale card here is a regression).
+- [ ] Go back to Inventory — the tile should reflect the edit too (e.g. the HOF badge
+      appears/disappears), and the "Hall of Famers 🏆" filter should now include/exclude
+      the card accordingly.
+- [ ] Edit a card and change only the sport chip — confirm the sport updates on the detail
+      screen and the card moves between sport filters.
+
+## 9. Card Delete
 
 - [ ] Open a card's details, tap the trash icon — expect a confirmation alert.
 - [ ] Tap "Cancel" — card should remain untouched.
@@ -131,7 +166,7 @@ detail/delete). Check off each step as you complete it.
 - [ ] (Optional, needs Supabase dashboard access) Verify the deleted card's row is gone
       from the `cards` table and its images are gone from `card-images` storage.
 
-## 9. Navigation & Session Edge Cases
+## 10. Navigation & Session Edge Cases
 
 - [ ] With an active session, manually navigate to `/(auth)/login` (or force it via deep
       link) — app should redirect you back into the tabs instead of showing the login
@@ -142,8 +177,12 @@ detail/delete). Check off each step as you complete it.
       app should not crash; camera should still function.
 - [ ] Turn off Wi-Fi/data mid-"Analyzing Card..." — expect a graceful "Identification
       Failed" alert (not a hang or crash), and you should be able to retry.
+- [ ] (Optional, needs Supabase dashboard access) After that failed identification, check
+      the `card-images` bucket — the images uploaded by the failed attempt should have
+      been cleaned up, not left orphaned. Repeat the failure a couple of times and confirm
+      the bucket does not accumulate files.
 
-## 10. Cross-Platform Sanity (if testing beyond the one iPhone)
+## 11. Cross-Platform Sanity (if testing beyond the one iPhone)
 
 - [ ] Repeat sections 3–4 on a second device/OS if available (Android via Expo Go, or
       `npx expo start --web`) to confirm no platform-specific regressions from the SDK

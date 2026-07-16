@@ -10,7 +10,7 @@ export interface CardDetails {
   id: string;
   front_image_url: string;
   back_image_url: string;
-  sport: string;
+  sport: Sport;
   player_name: string;
   year: number;
   brand: string;
@@ -52,4 +52,12 @@ export interface AICardResult {
   parallel_attributes: Required<ParallelAttributes>;
 }
 
-export type NewCardInput = Omit<CardDetails, "id" | "created_at"> & { user_id: string };
+// The user-editable subset of a card: everything except its identity, its images, and
+// when it was scanned. Shared by the create and edit forms.
+export type CardFields = Omit<CardDetails, "id" | "created_at" | "front_image_url" | "back_image_url">;
+
+export type NewCardInput = CardFields & {
+  user_id: string;
+  front_image_url: string;
+  back_image_url: string;
+};

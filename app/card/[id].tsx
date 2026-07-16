@@ -5,8 +5,8 @@ import { CardImageTile } from "@/components/ui/CardImageTile";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { colors } from "@/constants/theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function CardDetailsScreen() {
@@ -16,24 +16,26 @@ export default function CardDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    async function fetchCardDetails() {
-      try {
-        setLoading(true);
-        setCard(await getCard(id as string));
-      } catch (err) {
-        console.error("Error fetching card details:", err);
-        Alert.alert("Error", "Could not load card details.");
-        router.back();
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (id) {
-      fetchCardDetails();
+  // Refetches on focus rather than only on mount, so edits made on the edit screen are
+  // reflected when it pops back to here. `loading` is only ever cleared, never re-set, to
+  // keep the refetch from flashing a spinner over a card that is already on screen.
+  const fetchCardDetails = useCallback(async () => {
+    try {
+      setCard(await getCard(id as string));
+    } catch (err) {
+      console.error("Error fetching card details:", err);
+      Alert.alert("Error", "Could not load card details.");
+      router.back();
+    } finally {
+      setLoading(false);
     }
   }, [id, router]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (id) fetchCardDetails();
+    }, [id, fetchCardDetails])
+  );
 
   function handleDelete() {
     if (!card) return;
@@ -87,17 +89,28 @@ export default function CardDetailsScreen() {
         onBack={() => router.back()}
         backDisabled={deleting}
         rightSlot={
-          <TouchableOpacity
-            onPress={handleDelete}
-            className="p-2 bg-red-950/20 border border-red-500/20 rounded-full"
-            disabled={deleting}
-          >
-            {deleting ? (
-              <ActivityIndicator size="small" color={colors.danger} />
-            ) : (
-              <Ionicons name="trash-outline" size={20} color={colors.danger} />
-            )}
-          </TouchableOpacity>
+          <View className="flex-row">
+            <TouchableOpacity
+              onPress={() => router.push({ pathname: "/card/edit", params: { id: card.id } })}
+              className="p-2 bg-background-card border border-border rounded-full mr-2"
+              disabled={deleting}
+              accessibilityLabel="Edit card"
+            >
+              <Ionicons name="pencil-outline" size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleDelete}
+              className="p-2 bg-red-950/20 border border-red-500/20 rounded-full"
+              disabled={deleting}
+              accessibilityLabel="Delete card"
+            >
+              {deleting ? (
+                <ActivityIndicator size="small" color={colors.danger} />
+              ) : (
+                <Ionicons name="trash-outline" size={20} color={colors.danger} />
+              )}
+            </TouchableOpacity>
+          </View>
         }
       />
 

@@ -1,4 +1,4 @@
-import { CardDetails, CardSummary, NewCardInput } from "@/types/card";
+import { CardDetails, CardFields, CardSummary, NewCardInput } from "@/types/card";
 import { supabase } from "@/utils/supabase";
 import { getStoragePathFromUrl, removeCardImages } from "./storageService";
 
@@ -24,6 +24,13 @@ export async function getCard(id: string): Promise<CardDetails> {
 
 export async function insertCard(card: NewCardInput): Promise<void> {
   const { error } = await supabase.from("cards").insert(card);
+  if (error) throw error;
+}
+
+// Images and ownership are fixed once a card is scanned, so only the editable fields are
+// written back. RLS restricts the update to the caller's own rows.
+export async function updateCard(id: string, fields: CardFields): Promise<void> {
+  const { error } = await supabase.from("cards").update(fields).eq("id", id);
   if (error) throw error;
 }
 
