@@ -6,7 +6,14 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 
-SplashScreen.preventAutoHideAsync();
+// These reject when there is no splash screen currently showing — already hidden, or none
+// registered for the view controller at all. That is a state we neither control nor need
+// to act on, so it is swallowed rather than left to surface as an unhandled rejection.
+function ignoreMissingSplash(err: unknown) {
+  console.debug("Splash screen already dismissed:", err);
+}
+
+SplashScreen.preventAutoHideAsync().catch(ignoreMissingSplash);
 
 function AuthGate() {
   const { user, isLoading } = useAuth();
@@ -14,11 +21,21 @@ function AuthGate() {
   const router = useRouter();
   const navigationState = useRootNavigationState();
 
-  useEffect(() => {
-    // Wait until both the auth state has loaded and the root navigation state is ready
-    if (isLoading || !navigationState?.key) return;
+  // Both the auth state and the root navigation state have to be ready before we can know
+  // where to send the user.
+  const isReady = !isLoading && !!navigationState?.key;
 
-    SplashScreen.hideAsync();
+  // Kept apart from the redirect effect below. That one re-runs on every navigation
+  // because it depends on `segments`, and hiding the splash from inside it meant
+  // hideAsync fired again on each route change, rejecting every time after the first.
+  useEffect(() => {
+    if (isReady) {
+      SplashScreen.hideAsync().catch(ignoreMissingSplash);
+    }
+  }, [isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
 
     const inAuthGroup = segments[0] === "(auth)";
 
@@ -27,7 +44,7 @@ function AuthGate() {
     } else if (user && inAuthGroup) {
       router.replace("/(tabs)");
     }
-  }, [user, isLoading, segments, router, navigationState]);
+  }, [user, isReady, segments, router]);
 
   if (isLoading) {
     return (

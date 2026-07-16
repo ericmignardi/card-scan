@@ -87,54 +87,54 @@ export function LotScanFlow({ mode, onModeChange }: LotScanFlowProps) {
 
   return (
     <View className="flex-1 bg-black">
-      <CameraView style={StyleSheet.absoluteFill} ref={cameraRef}>
-        <View className="flex-1 justify-between bg-black/40 py-16 px-6">
-          <View className="items-center">
-            <View className="mb-4">
-              <ScanModeToggle mode={mode} onChange={onModeChange} />
-            </View>
-
-            <Text className="text-2xl font-black text-white text-center tracking-wide">Scan LOT</Text>
-            <Text className="text-foreground-muted text-sm text-center mt-1 max-w-xs">
-              Lay the cards out face up in a grid, without overlapping, and fit them all inside the frame.
-            </Text>
+      {/* CameraView does not support children — the overlay is a sibling laid over it. */}
+      <CameraView style={StyleSheet.absoluteFill} ref={cameraRef} />
+      <View style={StyleSheet.absoluteFill} className="justify-between bg-black/40 py-16 px-6">
+        <View className="items-center">
+          <View className="mb-4">
+            <ScanModeToggle mode={mode} onChange={onModeChange} />
           </View>
 
-          <View className="w-full aspect-square self-center items-center justify-center">
-            <View
-              style={{
-                width: "92%",
-                height: "92%",
-                borderWidth: 3,
-                borderColor: colors.accent,
-                borderRadius: 24,
-                borderStyle: "dashed",
-              }}
-            />
-          </View>
-
-          <View className="items-center">
-            <Text className="text-foreground-muted text-xs text-center mb-4 max-w-xs">
-              Fronts only — card numbers and serial numbers printed on the backs won&apos;t be captured.
-            </Text>
-
-            <TouchableOpacity
-              onPress={takePicture}
-              disabled={processing}
-              className={`w-20 h-20 rounded-full border-4 border-white justify-center items-center shadow-2xl ${
-                processing ? "opacity-50" : ""
-              }`}
-              style={{ backgroundColor: colors.accent }}
-            >
-              {processing ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Ionicons name="grid" size={30} color="#ffffff" />
-              )}
-            </TouchableOpacity>
-          </View>
+          <Text className="text-2xl font-black text-white text-center tracking-wide">Scan LOT</Text>
+          <Text className="text-foreground-muted text-sm text-center mt-1 max-w-xs">
+            Lay the cards out face up in a grid, without overlapping, and fit them all inside the frame.
+          </Text>
         </View>
-      </CameraView>
+
+        <View className="w-full aspect-square self-center items-center justify-center">
+          <View
+            style={{
+              width: "92%",
+              height: "92%",
+              borderWidth: 3,
+              borderColor: colors.accent,
+              borderRadius: 24,
+              borderStyle: "dashed",
+            }}
+          />
+        </View>
+
+        <View className="items-center">
+          <Text className="text-foreground-muted text-xs text-center mb-4 max-w-xs">
+            Fronts only — card numbers and serial numbers printed on the backs won&apos;t be captured.
+          </Text>
+
+          <TouchableOpacity
+            onPress={takePicture}
+            disabled={processing}
+            className={`w-20 h-20 rounded-full border-4 border-white justify-center items-center shadow-2xl ${
+              processing ? "opacity-50" : ""
+            }`}
+            style={{ backgroundColor: colors.accent }}
+          >
+            {processing ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Ionicons name="grid" size={30} color="#ffffff" />
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
