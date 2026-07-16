@@ -10,6 +10,7 @@ The **Sports Card Scanner** is a React Native/Expo mobile application designed f
 ### Key Objectives
 *   **Automate Cataloging**: Eliminate manual data entry for card collections by using AI-powered image analysis.
 *   **Accurate Double-Sided Scanning**: Analyze both front (visual details, player, team, rookie logos) and back (card number, copyright year, statistics, serial numbering) to ensure high-fidelity card identification.
+*   **Surface Collectible Significance**: Flag the two attributes that most drive a card's interest — **Rookie Card** status, read from the card itself, and **Hall of Fame** status, which is not printed on the card and must be derived from the identified player's career.
 *   **Cloud Inventory**: Save and manage a search-enabled inventory of collected cards securely.
 *   **Privacy & Security**: Protect sensitive credentials by proxying all AI requests through serverless backend functions.
 
@@ -18,19 +19,21 @@ The **Sports Card Scanner** is a React Native/Expo mobile application designed f
 ## 2. Target Audience & Personas
 *   **The Hobbyist Collector**: Collects sports cards casually and wants an easy way to track what they own on their phone.
 *   **The Rookie Card Hunter**: Actively searches for Rookie Cards (RCs) and needs immediate confirmation if a logo or parallel detail matches rookie specifications.
+*   **The Hall of Fame Collector**: Focuses on cards of inducted players and needs to know at a glance which cards in a stack are Hall of Famers — including cards printed long before the player was inducted, where nothing on the card itself gives it away.
 *   **The Inventory Cataloger**: Has boxes of cards and wants to quickly scan front/back and add them to a database, filtering by sport or year.
 
 ---
 
 ## 3. Tech Stack
-*   **Frontend**: React Native, Expo (SDK 57), Expo Router (file-based navigation), Expo Camera, Expo Image Manipulator.
+*   **Frontend**: React Native, Expo (SDK 54), Expo Router (file-based navigation), Expo Camera, Expo Image Manipulator.
+    *   SDK 54 is pinned deliberately below npm's `latest` because the primary test device's Expo Go is capped there. Read `AGENTS.md` before changing it.
 *   **Styling**: NativeWind (Tailwind CSS for React Native).
 *   **Backend (BaaS)**: Supabase.
     *   **Authentication**: Supabase Auth (Email/Password credentials).
     *   **Database**: PostgreSQL with Row-Level Security (RLS).
     *   **File Storage**: Supabase Storage (for storing scanned card front/back images).
     *   **Serverless Code**: Supabase Edge Functions (Deno/TypeScript) for secure API calls.
-*   **AI Engine**: Gemini 2.5 Flash (via Google Generative AI SDK on the Edge Function) for fast, low-cost multimodal image analysis.
+*   **AI Engine**: Gemini 2.5 Flash, called over the REST API from the Edge Function, for fast, low-cost multimodal image analysis.
 
 ---
 
@@ -64,23 +67,25 @@ The **Sports Card Scanner** is a React Native/Expo mobile application designed f
 *   The app displays the AI's returned properties:
     *   **Player Name**, **Year**, **Brand** (e.g. Topps, Panini, Bowman), **Card Number** (e.g. "US250", "698", "A-1").
     *   **Sport** (Baseball, Basketball, Football, Soccer, Hockey).
-    *   **Attributes Flags**: `is_rookie`, `is_insert`, `is_autographed`, `is_memorabilia`.
+    *   **Attributes Flags**: `is_rookie`, `is_hall_of_famer`, `is_insert`, `is_autographed`, `is_memorabilia`.
     *   **Parallel Details**: Attributes like refractor colors, serial numbers (e.g. "12/99"), or print-run descriptions.
+*   **Hall of Fame Status**: `is_hall_of_famer` is the one field not read off the card. Once the player is identified, it is judged from that player's career against the major Hall for their sport (Cooperstown, Naismith, Canton, Hockey HOF, National Soccer HOF). It reflects the player's status *today*, not at the card's print date, and must default to `false` for active players, merely-eligible players, and any case where the model is unsure or cannot identify the player. Because a recent induction may fall past the model's knowledge cutoff, the UI must treat this flag as a suggestion the user is expected to confirm.
 *   **Save/Edit Screen**: The user can manually review and edit any field (e.g., in case of AI mismatch) before clicking "Add to Collection".
 *   **Discard**: The user can discard the scan, which deletes the files from Supabase Storage and returns to the scanner screen.
 
 ### 4.5. Collection Inventory Management
 *   Displays a list/grid of all saved cards.
 *   **Search**: Search cards by Player Name.
-*   **Filters**: Filter collection by Sport, Rookie status (`is_rookie`), Autographed status (`is_autographed`), and Brand.
-*   **Detail View**: Tapping a card opens a full details screen showing both front/back images, all metadata, and a "Delete Card" button (which removes the record from the DB and the corresponding images from Storage).
+*   **Filters**: Filter collection by Sport, Rookie status (`is_rookie`), Hall of Famer status (`is_hall_of_famer`), Autographed status (`is_autographed`), and Brand.
+*   **Detail View**: Tapping a card opens a full details screen showing both front/back images, all metadata, a "Delete Card" button (which removes the record from the DB and the corresponding images from Storage), and an "Edit Card" button.
+*   **Edit**: Any field on a saved card can be corrected after the fact, using the same form as the confirm screen. A card's images and owner are fixed at scan time and are not editable. This matters most for `is_hall_of_famer`, which can become stale through no fault of the scan — a player gets inducted years after their cards were catalogued.
 
 ---
 
 ## 5. Non-Functional Requirements
 *   **Performance (Latency)**: Card identification (including uploads and Gemini API call) should complete in under 8 seconds under normal network conditions.
 *   **Security**: No Gemini API keys or admin Supabase service role keys may be stored in the React Native client. The client talks exclusively to Supabase client APIs and the Edge Function using the user's JWT.
-*   **Data Integrity**: If a user cancels a scan or deletes a card, the associated files must be deleted from Supabase Storage to prevent orphaned storage accumulation.
+*   **Data Integrity**: If a user cancels a scan, deletes a card, or an identification fails after its images were already uploaded, the associated files must be deleted from Supabase Storage to prevent orphaned storage accumulation. Note that uploads precede identification, so a failed scan is a leak path and not just a cosmetic error.
 *   **Offline Mode**: Scanned collections are cached locally on-device. When offline, users can browse their inventory, but scanning and adding new cards is disabled.
 
 ---
@@ -95,7 +100,7 @@ sequenceDiagram
     participant Storage as Supabase Storage
     participant DB as Supabase DB (PostgreSQL)
     participant EF as Supabase Edge Function (Deno)
-    participant Gemini as Gemini API (1.5 Flash)
+    participant Gemini as Gemini API (2.5 Flash)
 
     User->>App: Captures Front & Back of Card
     App->>App: Compresses images
@@ -144,6 +149,7 @@ Stores the metadata and image references for scanned cards.
 | `brand` | `text` | Not Null | e.g. Topps, Bowman, Panini, Donruss |
 | `card_number` | `text` | Not Null | The identifier on the card (e.g. '698', 'RC-3') |
 | `is_rookie` | `boolean` | Not Null, Default `false` | Flag if card is a Rookie Card |
+| `is_hall_of_famer` | `boolean` | Not Null, Default `false` | Flag if the player is an inducted Hall of Famer. Property of the player, not the card; partial index on `(user_id) WHERE is_hall_of_famer` backs the inventory filter |
 | `is_insert` | `boolean` | Not Null, Default `false` | Flag if card is an insert/subset card |
 | `is_autographed`| `boolean` | Not Null, Default `false` | Flag if card is autographed |
 | `is_memorabilia`| `boolean` | Not Null, Default `false` | Flag if card contains jersey/patch/bat |
@@ -178,6 +184,27 @@ Examine both images meticulously to identify the card.
 - Check the back of the card to confirm the copyright year, card number (e.g., in a corner or header, prefixed by '#' or letters), and see if there are serial numbers stamped (e.g., '10/99', '250/250').
 - Detect if it is an insert card, an autographed card, or a memorabilia card (patch, jersey piece).
 
+HALL OF FAME:
+Unlike every other field, 'is_hall_of_famer' is NOT read off the card. Once you have
+identified the player, decide from your own knowledge of that player's career whether
+they have been formally inducted into the major Hall of Fame for their sport:
+  Baseball   -> National Baseball Hall of Fame (Cooperstown)
+  Basketball -> Naismith Memorial Basketball Hall of Fame
+  Football   -> Pro Football Hall of Fame (Canton)
+  Hockey     -> Hockey Hall of Fame (Toronto)
+  Soccer     -> National Soccer Hall of Fame
+Rules for this field:
+- Set it true ONLY for a player you positively recognize as already inducted.
+- A card may show a player years before induction; judge the player's status today,
+  not the status at the time the card was printed. A 1951 Mickey Mantle rookie card is
+  a Hall of Famer card.
+- Set it false for active players, for players who are merely eligible, likely, or
+  "future first-ballot" candidates, for college/minor-league Halls of Fame, for team
+  or franchise-specific rings of honor, and whenever you are unsure.
+- If you cannot confidently identify the player at all, set it false.
+Do not let a strong career record alone convince you; induction is a specific event
+that either happened or did not.
+
 Return your findings strictly in the requested JSON structure. Do not guess. If a value is unknown, return an empty string or standard defaults.
 ```
 
@@ -191,6 +218,7 @@ The Gemini API will be configured to output JSON conforming to the following str
   "brand": "Topps Update",
   "card_number": "US250",
   "is_rookie": true,
+  "is_hall_of_famer": false,
   "is_insert": false,
   "is_autographed": false,
   "is_memorabilia": false,

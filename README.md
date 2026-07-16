@@ -2,10 +2,14 @@
 
 An AI-powered React Native/Expo application that scans both the front and back of sports cards (Baseball, Basketball, Football, Soccer, Hockey), identifies them using the Gemini 2.5 Flash API via Supabase Edge Functions, and stores them in a personal cloud inventory database.
 
+Beyond transcribing what's printed on the card, it flags the two attributes collectors care about most: **Rookie Cards**, read from the card's own logos and banners, and **Hall of Famers**, which appear nowhere on the card and are derived from the identified player's career. Because Hall of Fame status can change after a card is catalogued — and can fall past the model's knowledge cutoff — every field on a saved card remains editable.
+
 ---
 
 ## 📑 Core Reference Documents
 *   **[Product Requirements Document (PRD.md)](./PRD.md)**: Defines the app's features, functional scope, database entities/schemas, and system architecture.
+*   **[Manual Test Plan (TEST.md)](./TEST.md)**: Ordered, checkbox-driven pass over every screen and flow. There is no automated test suite; this is the regression net.
+*   **[Agent/Contributor Notes (AGENTS.md)](./AGENTS.md)**: Expo SDK pinning rules and config-plugin gotchas. **Read before changing the Expo SDK version.**
 
 ---
 
@@ -16,11 +20,12 @@ card-scan/
 ├── app/                     # Expo Router (file-based navigation)
 │   ├── (tabs)/              # Main screens: Inventory (index), Scanner (scan), Profile (profile)
 │   ├── (auth)/              # Authentication screens (login)
-│   ├── card/                # Stack screens: Card Details ([id].tsx), Confirm (confirm.tsx)
+│   ├── card/                # Stack screens: Card Details ([id].tsx), Confirm (confirm.tsx), Edit (edit.tsx)
 │   ├── _layout.tsx          # Root navigation config & NativeWind styling import
 │   └── index.tsx            # Initial routing gatekeeper
 ├── assets/                  # Images, fonts, and application logos
-├── components/ui/           # Shared UI components (Button, FormField, CardImageTile, etc.)
+├── components/              # CardForm — the shared create/edit card form
+│   └── ui/                  # Shared UI primitives (Button, FormField, CardImageTile, ToggleRow, etc.)
 ├── constants/                # Theme colors, sport list
 ├── context/                  # State management providers (AuthContext)
 ├── hooks/                    # Screen-level logic (useCards, useCardScanner)
